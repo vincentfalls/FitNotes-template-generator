@@ -1,8 +1,8 @@
 import { Routine, RoutineSection, RoutineSectionExercise, RoutineSet } from './models';
 
-export type WorkoutGoal = 'hypertrophy' | 'strength' | 'general_fitness';
+export type WorkoutGoal = 'hypertrophy' | 'strength' | 'general_fitness' | 'fat_loss';
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
-export type EquipmentType = 'full_gym' | 'barbell_rack' | 'dumbbells_only' | 'bodyweight_only';
+export type EquipmentType = 'full_gym' | 'barbell_rack' | 'dumbbells_only' | 'bodyweight_only' | 'kettlebells_bands';
 
 function makeSets(count: number, reps: number, weight = 0): RoutineSet[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -22,11 +22,17 @@ export class SmartWorkoutGenerator {
     experience?: ExperienceLevel;
     equipment?: EquipmentType;
     focusArea?: string;
+    injuries?: string[];
+    avoidExercises?: string[];
+    duration?: 'express' | 'standard' | 'extended';
   }): Routine {
     const goal = params.goal || 'hypertrophy';
     const days = Math.max(2, Math.min(6, params.daysPerWeek || 4));
     const experience = params.experience || 'intermediate';
     const equipment = params.equipment || 'full_gym';
+    const injuries = params.injuries || [];
+    const avoid = params.avoidExercises || [];
+    const duration = params.duration || 'standard';
 
     let compoundReps = 8;
     let accessoryReps = 12;
@@ -50,8 +56,9 @@ export class SmartWorkoutGenerator {
 
     const titleGoal = goal.charAt(0).toUpperCase() + goal.slice(1).replace('_', ' ');
     const titleEq = equipment.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const injuryStr = injuries.length > 0 ? ` Joint Safeguards: ${injuries.join(', ')}.` : '';
     const routineName = `Smart ${titleGoal} (${days}-Day ${titleEq})`;
-    const routineNotes = `Generated for ${experience} level. Goal: ${titleGoal}. Equipment: ${titleEq}.`;
+    const routineNotes = `Generated for ${experience} level. Goal: ${titleGoal}. Equipment: ${titleEq}.${injuryStr}`;
 
     const sections: RoutineSection[] = [];
 

@@ -45,8 +45,13 @@ class SmartWorkoutGenerator:
         experience: ExperienceLevel = ExperienceLevel.INTERMEDIATE,
         equipment: EquipmentType = EquipmentType.FULL_GYM,
         focus_area: Optional[str] = None,
+        injuries: Optional[List[str]] = None,
+        avoid_exercises: Optional[List[str]] = None,
+        duration: str = "standard",
     ) -> Routine:
         days = max(2, min(6, days_per_week))
+        active_injuries = set(injuries or [])
+        avoided = set(avoid_exercises or [])
 
         # Determine rep targets & set volume based on goal & experience
         if goal == WorkoutGoal.STRENGTH:
@@ -65,11 +70,13 @@ class SmartWorkoutGenerator:
             compound_sets = 3
             accessory_sets = 3
 
+        injury_str = f" Joint Safeguards: {', '.join(active_injuries)}." if active_injuries else ""
+
         # Generate split architecture based on days
         routine_name = f"Custom {goal.value.title()} ({days}-Day {equipment.value.replace('_', ' ').title()})"
         routine_notes = (
             f"Generated for {experience.value.title()} level lifter. "
-            f"Goal: {goal.value.title()}. Equipment: {equipment.value.replace('_', ' ').title()}."
+            f"Goal: {goal.value.title()}. Equipment: {equipment.value.replace('_', ' ').title()}.{injury_str}"
         )
 
         sections: List[RoutineSection] = []
@@ -113,6 +120,24 @@ class SmartWorkoutGenerator:
             sections.append(cls._build_push_day("Day 4: Push B", compound_sets, compound_reps, accessory_sets, accessory_reps, equipment, 2))
             sections.append(cls._build_pull_day("Day 5: Pull B", compound_sets, compound_reps, accessory_sets, accessory_reps, equipment, 2))
             sections.append(cls._build_legs_day("Day 6: Legs B", compound_sets, compound_reps, accessory_sets, accessory_reps, equipment, 2))
+
+        # Filter out avoided exercises or apply substitutions if needed
+        for sec in sections:
+            filtered_exercises = []
+            for ex in sec.exercises:
+                if ex.exercise_name in avoided:
+                    continue
+                # Lower back injury filter
+                if "lower_back" in active_injuries and ex.exercise_name in ("Conventional Deadlift", "Barbell Back Squat", "Barbell Bent-Over Row"):
+                    continue
+                # Shoulder injury filter
+                if "shoulder" in active_injuries and ex.exercise_name in ("Overhead Press (Barbell)", "Dips (Chest)"):
+                    continue
+                filtered_exercises.append(ex)
+            
+            # Limit based on session duration
+            max_ex = 4 if duration == "express" else (7 if duration == "extended" else 5)
+            sec.exercises = filtered_exercises[:max_ex]
 
         for idx, sec in enumerate(sections):
             sec.sort_order = idx

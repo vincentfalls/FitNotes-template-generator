@@ -723,44 +723,656 @@ function downloadBlob(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
-// Smart Wizard Modal Logic
+// ==========================================================================
+// Comprehensive Exercise Catalog with Biomechanical Metadata
+// ==========================================================================
+const EXERCISE_CATALOG = [
+  // CHEST
+  { name: 'Flat Barbell Bench Press', category: 'Chest', pattern: 'horizontal_push', equipment: 'barbell', jointRisks: ['shoulder', 'wrist'], compound: true },
+  { name: 'Incline Barbell Bench Press', category: 'Chest', pattern: 'incline_push', equipment: 'barbell', jointRisks: ['shoulder', 'wrist'], compound: true },
+  { name: 'Flat Dumbbell Bench Press', category: 'Chest', pattern: 'horizontal_push', equipment: 'dumbbells', jointRisks: [], compound: true },
+  { name: 'Incline Dumbbell Bench Press', category: 'Chest', pattern: 'incline_push', equipment: 'dumbbells', jointRisks: [], compound: true },
+  { name: 'Push Up', category: 'Chest', pattern: 'horizontal_push', equipment: 'bodyweight', jointRisks: [], compound: true },
+  { name: 'Dips (Chest)', category: 'Chest', pattern: 'dip', equipment: 'dip_station', jointRisks: ['shoulder'], compound: true },
+  { name: 'Cable Crossover', category: 'Chest', pattern: 'chest_fly', equipment: 'cables', jointRisks: [], compound: false },
+  { name: 'Dumbbell Chest Flye', category: 'Chest', pattern: 'chest_fly', equipment: 'dumbbells', jointRisks: ['shoulder'], compound: false },
+  { name: 'Machine Chest Press', category: 'Chest', pattern: 'horizontal_push', equipment: 'machines', jointRisks: [], compound: true },
+  { name: 'Landmine Chest Press', category: 'Chest', pattern: 'incline_push', equipment: 'barbell', jointRisks: [], compound: true },
+
+  // SHOULDERS
+  { name: 'Overhead Press (Barbell)', category: 'Shoulders', pattern: 'vertical_push', equipment: 'barbell', jointRisks: ['lower_back', 'shoulder', 'wrist', 'neck'], compound: true },
+  { name: 'Seated Dumbbell Shoulder Press', category: 'Shoulders', pattern: 'vertical_push', equipment: 'dumbbells', jointRisks: ['shoulder'], compound: true },
+  { name: 'Standing Dumbbell Shoulder Press', category: 'Shoulders', pattern: 'vertical_push', equipment: 'dumbbells', jointRisks: ['lower_back', 'shoulder'], compound: true },
+  { name: 'Neutral-Grip Dumbbell Press', category: 'Shoulders', pattern: 'vertical_push', equipment: 'dumbbells', jointRisks: [], compound: true },
+  { name: 'Side Lateral Raise (Dumbbell)', category: 'Shoulders', pattern: 'lateral_delt', equipment: 'dumbbells', jointRisks: [], compound: false },
+  { name: 'Side Lateral Raise (Cable)', category: 'Shoulders', pattern: 'lateral_delt', equipment: 'cables', jointRisks: [], compound: false },
+  { name: 'Rear Delt Flye (Dumbbell)', category: 'Shoulders', pattern: 'rear_delt', equipment: 'dumbbells', jointRisks: [], compound: false },
+  { name: 'Rear Delt Flye (Machine)', category: 'Shoulders', pattern: 'rear_delt', equipment: 'machines', jointRisks: [], compound: false },
+  { name: 'Face Pull (Cable)', category: 'Back', pattern: 'rear_delt', equipment: 'cables', jointRisks: [], compound: false },
+  { name: 'Landmine Overhead Press', category: 'Shoulders', pattern: 'vertical_push', equipment: 'barbell', jointRisks: [], compound: true },
+
+  // BACK
+  { name: 'Conventional Deadlift', category: 'Back', pattern: 'deadlift', equipment: 'barbell', jointRisks: ['lower_back', 'neck'], compound: true },
+  { name: 'Barbell Bent-Over Row', category: 'Back', pattern: 'horizontal_pull', equipment: 'barbell', jointRisks: ['lower_back', 'wrist'], compound: true },
+  { name: 'Chest-Supported Dumbbell Row', category: 'Back', pattern: 'horizontal_pull', equipment: 'dumbbells', jointRisks: [], compound: true },
+  { name: 'Single-Arm Dumbbell Row', category: 'Back', pattern: 'horizontal_pull', equipment: 'dumbbells', jointRisks: [], compound: true },
+  { name: 'Seated Cable Row', category: 'Back', pattern: 'horizontal_pull', equipment: 'cables', jointRisks: [], compound: true },
+  { name: 'Lat Pulldown (Cable)', category: 'Back', pattern: 'vertical_pull', equipment: 'cables', jointRisks: [], compound: true },
+  { name: 'Pull Up', category: 'Back', pattern: 'vertical_pull', equipment: 'pullup_bar', jointRisks: ['shoulder'], compound: true },
+  { name: 'Chin Up', category: 'Back', pattern: 'vertical_pull', equipment: 'pullup_bar', jointRisks: ['shoulder'], compound: true },
+  { name: 'T-Bar Row', category: 'Back', pattern: 'horizontal_pull', equipment: 'barbell', jointRisks: ['lower_back'], compound: true },
+  { name: 'Hyperextension (Back Extension)', category: 'Back', pattern: 'spinal_extension', equipment: 'machines', jointRisks: [], compound: false },
+
+  // LEGS - QUADS & GLUTES
+  { name: 'Barbell Back Squat', category: 'Legs', pattern: 'squat', equipment: 'barbell', jointRisks: ['lower_back', 'knee', 'neck'], compound: true },
+  { name: 'Front Squat', category: 'Legs', pattern: 'squat', equipment: 'barbell', jointRisks: ['knee', 'wrist'], compound: true },
+  { name: 'Box Squat', category: 'Legs', pattern: 'squat', equipment: 'barbell', jointRisks: ['knee'], compound: true },
+  { name: 'Goblet Squat (Dumbbell)', category: 'Legs', pattern: 'squat', equipment: 'dumbbells', jointRisks: [], compound: true },
+  { name: 'Bulgarian Split Squat', category: 'Legs', pattern: 'lunge', equipment: 'dumbbells', jointRisks: ['knee'], compound: true },
+  { name: 'Leg Press', category: 'Legs', pattern: 'leg_press', equipment: 'machines', jointRisks: [], compound: true },
+  { name: 'Walking Lunge', category: 'Legs', pattern: 'lunge', equipment: 'dumbbells', jointRisks: ['knee'], compound: true },
+  { name: 'Leg Extension (Machine)', category: 'Legs', pattern: 'quad_iso', equipment: 'machines', jointRisks: ['knee'], compound: false },
+
+  // LEGS - HAMSTRINGS & POSTERIOR
+  { name: 'Romanian Deadlift (Barbell)', category: 'Legs', pattern: 'hinge', equipment: 'barbell', jointRisks: ['lower_back'], compound: true },
+  { name: 'Dumbbell Romanian Deadlift', category: 'Legs', pattern: 'hinge', equipment: 'dumbbells', jointRisks: [], compound: true },
+  { name: 'Hip Thrust (Barbell)', category: 'Legs', pattern: 'hip_thrust', equipment: 'barbell', jointRisks: [], compound: true },
+  { name: 'Glute Bridge (Dumbbell)', category: 'Legs', pattern: 'hip_thrust', equipment: 'dumbbells', jointRisks: [], compound: false },
+  { name: 'Leg Curl (Machine)', category: 'Legs', pattern: 'hamstring_iso', equipment: 'machines', jointRisks: [], compound: false },
+  { name: 'Standing Calf Raise', category: 'Legs', pattern: 'calf', equipment: 'dumbbells', jointRisks: [], compound: false },
+  { name: 'Seated Calf Raise', category: 'Legs', pattern: 'calf', equipment: 'machines', jointRisks: [], compound: false },
+
+  // ARMS & ACCESSORIES
+  { name: 'Barbell Biceps Curl', category: 'Biceps', pattern: 'bicep_curl', equipment: 'barbell', jointRisks: ['wrist'], compound: false },
+  { name: 'EZ Bar Biceps Curl', category: 'Biceps', pattern: 'bicep_curl', equipment: 'barbell', jointRisks: [], compound: false },
+  { name: 'Incline Dumbbell Curl', category: 'Biceps', pattern: 'bicep_curl', equipment: 'dumbbells', jointRisks: [], compound: false },
+  { name: 'Hammer Curl (Dumbbell)', category: 'Biceps', pattern: 'bicep_curl', equipment: 'dumbbells', jointRisks: [], compound: false },
+  { name: 'Cable Biceps Curl', category: 'Biceps', pattern: 'bicep_curl', equipment: 'cables', jointRisks: [], compound: false },
+  { name: 'Skull Crusher (EZ Bar)', category: 'Triceps', pattern: 'tricep_ext', equipment: 'barbell', jointRisks: ['elbow', 'wrist'], compound: false },
+  { name: 'Triceps Pushdown (Cable)', category: 'Triceps', pattern: 'tricep_ext', equipment: 'cables', jointRisks: [], compound: false },
+  { name: 'Overhead Dumbbell Triceps Extension', category: 'Triceps', pattern: 'tricep_ext', equipment: 'dumbbells', jointRisks: ['shoulder'], compound: false },
+  { name: 'Close-Grip Barbell Bench Press', category: 'Triceps', pattern: 'tricep_press', equipment: 'barbell', jointRisks: ['wrist'], compound: true },
+
+  // CORE
+  { name: 'Hanging Leg Raise', category: 'Abs', pattern: 'abs', equipment: 'pullup_bar', jointRisks: [], compound: false },
+  { name: 'Ab Wheel Rollout', category: 'Abs', pattern: 'abs', equipment: 'bodyweight', jointRisks: ['lower_back'], compound: false },
+  { name: 'Plank', category: 'Abs', pattern: 'abs', equipment: 'bodyweight', jointRisks: [], compound: false },
+  { name: 'Cable Woodchopper', category: 'Abs', pattern: 'abs', equipment: 'cables', jointRisks: [], compound: false },
+  { name: 'Cable Crunch', category: 'Abs', pattern: 'abs', equipment: 'cables', jointRisks: [], compound: false }
+];
+
+// Equipment presets gear mappings
+const EQUIPMENT_PRESETS = {
+  full_gym: ['barbell', 'dumbbells', 'bench', 'rack', 'cables', 'pullup_bar', 'dip_station', 'machines'],
+  barbell_rack: ['barbell', 'dumbbells', 'bench', 'rack', 'pullup_bar'],
+  dumbbells_only: ['dumbbells', 'bench', 'bodyweight'],
+  bodyweight_only: ['bodyweight', 'pullup_bar', 'dip_station'],
+  kettlebells_bands: ['kettlebell', 'bands', 'bodyweight']
+};
+
+// Wizard State Object
+const wizardState = {
+  currentStep: 1,
+  totalSteps: 5,
+  days: 4,
+  goal: 'hypertrophy',
+  experience: 'intermediate',
+  duration: 'standard',
+  equipmentPreset: 'full_gym',
+  gear: new Set(['barbell', 'dumbbells', 'bench', 'rack', 'cables', 'pullup_bar', 'dip_station', 'machines']),
+  injuries: new Set(),
+  avoidedExercises: new Set(),
+  customAvoid: '',
+  focus: 'balanced'
+};
+
+// Wizard Step Controller
+function setWizardStep(step) {
+  wizardState.currentStep = Math.max(1, Math.min(5, step));
+
+  // Update step contents visibility
+  for (let i = 1; i <= wizardState.totalSteps; i++) {
+    const el = document.getElementById(`wizard-step-${i}`);
+    if (el) {
+      if (i === wizardState.currentStep) {
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+  }
+
+  // Update Progress Tracker
+  document.querySelectorAll('.wizard-step-item').forEach(item => {
+    const stepNum = parseInt(item.getAttribute('data-step'), 10);
+    item.classList.remove('active', 'completed');
+    if (stepNum === wizardState.currentStep) {
+      item.classList.add('active');
+    } else if (stepNum < wizardState.currentStep) {
+      item.classList.add('completed');
+    }
+  });
+
+  // Footer Navigation Buttons
+  const btnPrev = document.getElementById('btn-wizard-prev');
+  const btnNext = document.getElementById('btn-wizard-next');
+  const btnGenerate = document.getElementById('btn-generate-smart');
+
+  if (wizardState.currentStep === 1) {
+    btnPrev.classList.add('hidden');
+  } else {
+    btnPrev.classList.remove('hidden');
+  }
+
+  if (wizardState.currentStep === wizardState.totalSteps) {
+    btnNext.classList.add('hidden');
+    btnGenerate.classList.remove('hidden');
+    renderWizardSummary();
+  } else {
+    btnNext.classList.remove('hidden');
+    btnGenerate.classList.add('hidden');
+  }
+}
+
+// Render Review Summary in Step 5
+function renderWizardSummary() {
+  const container = document.getElementById('summary-preview');
+  if (!container) return;
+
+  const goalLabels = {
+    hypertrophy: 'Hypertrophy (Muscle Growth)',
+    strength: 'Strength & Power',
+    general_fitness: 'General Fitness & Health',
+    fat_loss: 'Fat Loss & Conditioning'
+  };
+
+  const durationLabels = {
+    express: 'Express (30-40 min, 3-4 exercises)',
+    standard: 'Standard (45-60 min, 5-6 exercises)',
+    extended: 'Extended (60-75 min, 7-8 exercises)'
+  };
+
+  const gearArray = Array.from(wizardState.gear);
+  const injuryArray = Array.from(wizardState.injuries);
+  
+  // Collect all avoided exercises
+  const allAvoided = new Set(wizardState.avoidedExercises);
+  const customList = (document.getElementById('custom-avoid-input')?.value || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  customList.forEach(ex => allAvoided.add(ex));
+
+  container.innerHTML = `
+    <div class="summary-item">
+      <span class="summary-item-label">Schedule & Goal</span>
+      <span class="summary-item-value">${wizardState.days} Days/Week • ${goalLabels[wizardState.goal] || wizardState.goal}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-item-label">Level & Duration</span>
+      <span class="summary-item-value">${wizardState.experience.toUpperCase()} • ${durationLabels[wizardState.duration] || wizardState.duration}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-item-label">Equipment Access</span>
+      <div class="summary-badge-list">
+        ${gearArray.map(g => `<span class="summary-badge">${g.replace('_', ' ')}</span>`).join('')}
+      </div>
+    </div>
+    <div class="summary-item">
+      <span class="summary-item-label">Protected Joints / Injuries</span>
+      <div class="summary-badge-list">
+        ${injuryArray.length > 0 
+          ? injuryArray.map(i => `<span class="summary-badge warning">🛡️ ${i.replace('_', ' ')}</span>`).join('')
+          : '<span class="summary-badge">None (Full Joint Capacity)</span>'}
+      </div>
+    </div>
+    <div class="summary-item" style="grid-column: 1 / -1;">
+      <span class="summary-item-label">Excluded / Avoided Exercises</span>
+      <div class="summary-badge-list">
+        ${allAvoided.size > 0 
+          ? Array.from(allAvoided).map(ex => `<span class="summary-badge danger">❌ ${ex}</span>`).join('')
+          : '<span class="summary-badge">None (All exercises allowed)</span>'}
+      </div>
+    </div>
+  `;
+}
+
+// Smart Exercise Matcher with Biomechanical Substitution
+function pickExercise(pattern, preferredCategory, usedNames) {
+  // Collect custom exclusions
+  const customList = (document.getElementById('custom-avoid-input')?.value || '')
+    .split(',')
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean);
+
+  const isAvoided = (name) => {
+    if (wizardState.avoidedExercises.has(name)) return true;
+    const lower = name.toLowerCase();
+    return customList.some(excluded => lower.includes(excluded));
+  };
+
+  const hasJointConflict = (ex) => {
+    return ex.jointRisks.some(risk => wizardState.injuries.has(risk));
+  };
+
+  const hasEquipment = (ex) => {
+    if (ex.equipment === 'bodyweight') return true;
+    return wizardState.gear.has(ex.equipment);
+  };
+
+  // Find direct pattern matches
+  let candidates = EXERCISE_CATALOG.filter(ex => {
+    if (usedNames.has(ex.name)) return false;
+    if (pattern && ex.pattern !== pattern) return false;
+    if (preferredCategory && ex.category !== preferredCategory && !pattern) return false;
+    if (!hasEquipment(ex)) return false;
+    if (hasJointConflict(ex)) return false;
+    if (isAvoided(ex.name)) return false;
+    return true;
+  });
+
+  if (candidates.length > 0) {
+    const chosen = candidates[0];
+    usedNames.add(chosen.name);
+    return chosen;
+  }
+
+  // Fallback 1: Relax pattern, match category only with safety & gear constraints
+  if (preferredCategory) {
+    candidates = EXERCISE_CATALOG.filter(ex => {
+      if (usedNames.has(ex.name)) return false;
+      if (ex.category !== preferredCategory) return false;
+      if (!hasEquipment(ex)) return false;
+      if (hasJointConflict(ex)) return false;
+      if (isAvoided(ex.name)) return false;
+      return true;
+    });
+    if (candidates.length > 0) {
+      const chosen = candidates[0];
+      usedNames.add(chosen.name);
+      return chosen;
+    }
+  }
+
+  // Fallback 2: Any safe exercise with available equipment
+  candidates = EXERCISE_CATALOG.filter(ex => {
+    if (usedNames.has(ex.name)) return false;
+    if (!hasEquipment(ex)) return false;
+    if (hasJointConflict(ex)) return false;
+    if (isAvoided(ex.name)) return false;
+    return true;
+  });
+
+  if (candidates.length > 0) {
+    const chosen = candidates[0];
+    usedNames.add(chosen.name);
+    return chosen;
+  }
+
+  // Last-ditch safe bodyweight default
+  const defaultEx = { name: 'Push Up', category: 'Chest', compound: true };
+  usedNames.add(defaultEx.name);
+  return defaultEx;
+}
+
+// Generate Sets based on Goal, Experience, and Compound vs Isolation
+function generateSets(isCompound) {
+  let setsCount = 3;
+  let repsCount = 10;
+
+  if (wizardState.goal === 'strength') {
+    if (isCompound) {
+      setsCount = wizardState.experience === 'beginner' ? 3 : 5;
+      repsCount = 5;
+    } else {
+      setsCount = 3;
+      repsCount = 8;
+    }
+  } else if (wizardState.goal === 'hypertrophy') {
+    if (isCompound) {
+      setsCount = 4;
+      repsCount = 8;
+    } else {
+      setsCount = wizardState.experience === 'advanced' ? 4 : 3;
+      repsCount = 12;
+    }
+  } else if (wizardState.goal === 'fat_loss') {
+    setsCount = 3;
+    repsCount = isCompound ? 12 : 15;
+  } else { // general_fitness
+    setsCount = 3;
+    repsCount = isCompound ? 10 : 12;
+  }
+
+  const sets = [];
+  for (let i = 0; i < setsCount; i++) {
+    sets.push({ metric_weight: 0, reps: repsCount });
+  }
+  return sets;
+}
+
+// Modal open/close bindings
 const modalWizard = document.getElementById('modal-wizard');
-document.getElementById('btn-smart-wizard').onclick = () => modalWizard.classList.remove('hidden');
+document.getElementById('btn-smart-wizard').onclick = () => {
+  setWizardStep(1);
+  modalWizard.classList.remove('hidden');
+};
 document.getElementById('btn-close-wizard').onclick = () => modalWizard.classList.add('hidden');
 
-// Choice Buttons (Goal, Equipment, Experience)
-document.querySelectorAll('.choice-btn').forEach(btn => {
-  btn.onclick = () => {
-    const group = btn.getAttribute('data-group');
-    document.querySelectorAll(`.choice-btn[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+// Step Navigation Buttons
+document.getElementById('btn-wizard-next').onclick = () => {
+  setWizardStep(wizardState.currentStep + 1);
+};
+document.getElementById('btn-wizard-prev').onclick = () => {
+  setWizardStep(wizardState.currentStep - 1);
+};
+
+// Progress bar item click navigation
+document.querySelectorAll('.wizard-step-item').forEach(item => {
+  item.onclick = () => {
+    const step = parseInt(item.getAttribute('data-step'), 10);
+    setWizardStep(step);
   };
 });
 
-// Days Buttons
+// Days buttons in Step 1
 document.querySelectorAll('.day-btn').forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    wizardState.days = parseInt(btn.getAttribute('data-days'), 10);
   };
 });
 
-// Generate Smart Routine
+// Choice buttons (Goal, Experience, Duration, Equipment Profile, Focus)
+document.querySelectorAll('.choice-btn').forEach(btn => {
+  btn.onclick = () => {
+    const group = btn.getAttribute('data-group');
+    const val = btn.getAttribute('data-value');
+    document.querySelectorAll(`.choice-btn[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    if (group === 'goal') wizardState.goal = val;
+    if (group === 'experience') wizardState.experience = val;
+    if (group === 'duration') wizardState.duration = val;
+    if (group === 'focus') wizardState.focus = val;
+
+    if (group === 'equipment') {
+      wizardState.equipmentPreset = val;
+      const presetGears = EQUIPMENT_PRESETS[val] || ['dumbbells', 'bodyweight'];
+      wizardState.gear = new Set(presetGears);
+
+      // Sync checkbox chips in step 2
+      document.querySelectorAll('#gear-chips .chip-item').forEach(chip => {
+        const input = chip.querySelector('input');
+        if (presetGears.includes(input.value)) {
+          input.checked = true;
+          chip.classList.add('active');
+        } else {
+          input.checked = false;
+          chip.classList.remove('active');
+        }
+      });
+    }
+  };
+});
+
+// Gear Checkboxes in Step 2
+document.querySelectorAll('#gear-chips .chip-item').forEach(chip => {
+  const input = chip.querySelector('input');
+  chip.onclick = (e) => {
+    if (e.target !== input) {
+      input.checked = !input.checked;
+    }
+    if (input.checked) {
+      chip.classList.add('active');
+      wizardState.gear.add(input.value);
+    } else {
+      chip.classList.remove('active');
+      wizardState.gear.delete(input.value);
+    }
+  };
+});
+
+// Injury Cards in Step 3
+document.querySelectorAll('.injury-card').forEach(card => {
+  card.onclick = () => {
+    const injury = card.getAttribute('data-injury');
+    if (card.classList.contains('active')) {
+      card.classList.remove('active');
+      wizardState.injuries.delete(injury);
+    } else {
+      card.classList.add('active');
+      wizardState.injuries.add(injury);
+    }
+  };
+});
+
+// Avoid Exercise Chips in Step 4
+document.querySelectorAll('.avoid-chip').forEach(chip => {
+  chip.onclick = () => {
+    const exName = chip.getAttribute('data-exercise');
+    if (chip.classList.contains('active')) {
+      chip.classList.remove('active');
+      wizardState.avoidedExercises.delete(exName);
+    } else {
+      chip.classList.add('active');
+      wizardState.avoidedExercises.add(exName);
+    }
+  };
+});
+
+// Main Smart Routine Generation Handler
 document.getElementById('btn-generate-smart').onclick = () => {
-  const goal = document.querySelector('.choice-btn[data-group="goal"].active').getAttribute('data-value');
-  const days = parseInt(document.querySelector('.day-btn.active').getAttribute('data-days'), 10);
-  const equipment = document.querySelector('.choice-btn[data-group="equipment"].active').getAttribute('data-value');
-  const experience = document.querySelector('.choice-btn[data-group="experience"].active').getAttribute('data-value');
+  const days = wizardState.days;
+  const maxExercisesPerDay = wizardState.duration === 'express' ? 4 : (wizardState.duration === 'extended' ? 7 : 5);
 
-  let template;
-  if (days === 6) template = PRESETS.ppl_6day;
-  else if (days === 4) template = PRESETS.upper_lower_4day;
-  else if (days === 3 && goal === 'strength') template = PRESETS.stronglifts_5x5;
-  else template = PRESETS.fullbody_3day;
+  const sections = [];
 
-  currentRoutine = JSON.parse(JSON.stringify(template));
-  currentRoutine.title = `Smart ${goal.toUpperCase()} (${days}-Day ${equipment.replace('_', ' ')})`;
-  currentRoutine.notes = `Generated for ${experience} level lifter. Equipment: ${equipment}.`;
+  const createDay = (dayName, targetPatterns) => {
+    const usedInDay = new Set();
+    const exercises = [];
+
+    // Slice patterns to fit duration
+    const selectedPatterns = targetPatterns.slice(0, maxExercisesPerDay);
+
+    selectedPatterns.forEach(patternInfo => {
+      const match = pickExercise(patternInfo.pattern, patternInfo.category, usedInDay);
+      exercises.push({
+        name: match.name,
+        category: match.category,
+        sets: generateSets(match.compound).length,
+        reps: generateSets(match.compound)[0].reps
+      });
+    });
+
+    return { name: dayName, exercises };
+  };
+
+  // Define split layouts with movement pattern assignments
+  if (days === 2) {
+    sections.push(createDay('Day 1: Full Body A', [
+      { pattern: 'squat', category: 'Legs' },
+      { pattern: 'horizontal_push', category: 'Chest' },
+      { pattern: 'horizontal_pull', category: 'Back' },
+      { pattern: 'vertical_push', category: 'Shoulders' },
+      { pattern: 'bicep_curl', category: 'Biceps' },
+      { pattern: 'abs', category: 'Abs' }
+    ]));
+    sections.push(createDay('Day 2: Full Body B', [
+      { pattern: 'hinge', category: 'Legs' },
+      { pattern: 'incline_push', category: 'Chest' },
+      { pattern: 'vertical_pull', category: 'Back' },
+      { pattern: 'lateral_delt', category: 'Shoulders' },
+      { pattern: 'tricep_ext', category: 'Triceps' },
+      { pattern: 'calf', category: 'Legs' }
+    ]));
+  } else if (days === 3) {
+    if (wizardState.goal === 'strength' || wizardState.experience === 'beginner') {
+      sections.push(createDay('Day 1: Full Body (Squat Focus)', [
+        { pattern: 'squat', category: 'Legs' },
+        { pattern: 'horizontal_push', category: 'Chest' },
+        { pattern: 'horizontal_pull', category: 'Back' },
+        { pattern: 'lateral_delt', category: 'Shoulders' },
+        { pattern: 'bicep_curl', category: 'Biceps' }
+      ]));
+      sections.push(createDay('Day 2: Full Body (Deadlift/Hinge Focus)', [
+        { pattern: 'deadlift', category: 'Back' },
+        { pattern: 'vertical_push', category: 'Shoulders' },
+        { pattern: 'vertical_pull', category: 'Back' },
+        { pattern: 'leg_press', category: 'Legs' },
+        { pattern: 'tricep_ext', category: 'Triceps' }
+      ]));
+      sections.push(createDay('Day 3: Full Body (Hypertrophy Focus)', [
+        { pattern: 'lunge', category: 'Legs' },
+        { pattern: 'incline_push', category: 'Chest' },
+        { pattern: 'horizontal_pull', category: 'Back' },
+        { pattern: 'rear_delt', category: 'Shoulders' },
+        { pattern: 'abs', category: 'Abs' }
+      ]));
+    } else {
+      sections.push(createDay('Day 1: Push (Chest, Shoulders, Triceps)', [
+        { pattern: 'horizontal_push', category: 'Chest' },
+        { pattern: 'vertical_push', category: 'Shoulders' },
+        { pattern: 'incline_push', category: 'Chest' },
+        { pattern: 'lateral_delt', category: 'Shoulders' },
+        { pattern: 'tricep_ext', category: 'Triceps' }
+      ]));
+      sections.push(createDay('Day 2: Pull (Back, Rear Delts, Biceps)', [
+        { pattern: 'vertical_pull', category: 'Back' },
+        { pattern: 'horizontal_pull', category: 'Back' },
+        { pattern: 'rear_delt', category: 'Shoulders' },
+        { pattern: 'bicep_curl', category: 'Biceps' },
+        { pattern: 'abs', category: 'Abs' }
+      ]));
+      sections.push(createDay('Day 3: Legs & Lower Body', [
+        { pattern: 'squat', category: 'Legs' },
+        { pattern: 'hinge', category: 'Legs' },
+        { pattern: 'lunge', category: 'Legs' },
+        { pattern: 'calf', category: 'Legs' },
+        { pattern: 'abs', category: 'Abs' }
+      ]));
+    }
+  } else if (days === 4) {
+    sections.push(createDay('Day 1: Upper A (Strength Focus)', [
+      { pattern: 'horizontal_push', category: 'Chest' },
+      { pattern: 'horizontal_pull', category: 'Back' },
+      { pattern: 'vertical_push', category: 'Shoulders' },
+      { pattern: 'vertical_pull', category: 'Back' },
+      { pattern: 'tricep_ext', category: 'Triceps' }
+    ]));
+    sections.push(createDay('Day 2: Lower A (Quad Focus)', [
+      { pattern: 'squat', category: 'Legs' },
+      { pattern: 'hinge', category: 'Legs' },
+      { pattern: 'leg_press', category: 'Legs' },
+      { pattern: 'calf', category: 'Legs' },
+      { pattern: 'abs', category: 'Abs' }
+    ]));
+    sections.push(createDay('Day 3: Upper B (Hypertrophy Focus)', [
+      { pattern: 'incline_push', category: 'Chest' },
+      { pattern: 'horizontal_pull', category: 'Back' },
+      { pattern: 'lateral_delt', category: 'Shoulders' },
+      { pattern: 'chest_fly', category: 'Chest' },
+      { pattern: 'bicep_curl', category: 'Biceps' },
+      { pattern: 'tricep_ext', category: 'Triceps' }
+    ]));
+    sections.push(createDay('Day 4: Lower B (Hamstring & Glute Focus)', [
+      { pattern: 'deadlift', category: 'Back' },
+      { pattern: 'lunge', category: 'Legs' },
+      { pattern: 'hip_thrust', category: 'Legs' },
+      { pattern: 'calf', category: 'Legs' },
+      { pattern: 'abs', category: 'Abs' }
+    ]));
+  } else if (days === 5) {
+    sections.push(createDay('Day 1: Push (Chest & Shoulders Focus)', [
+      { pattern: 'horizontal_push', category: 'Chest' },
+      { pattern: 'vertical_push', category: 'Shoulders' },
+      { pattern: 'incline_push', category: 'Chest' },
+      { pattern: 'lateral_delt', category: 'Shoulders' },
+      { pattern: 'tricep_ext', category: 'Triceps' }
+    ]));
+    sections.push(createDay('Day 2: Pull (Back & Biceps Focus)', [
+      { pattern: 'vertical_pull', category: 'Back' },
+      { pattern: 'horizontal_pull', category: 'Back' },
+      { pattern: 'rear_delt', category: 'Shoulders' },
+      { pattern: 'bicep_curl', category: 'Biceps' },
+      { pattern: 'abs', category: 'Abs' }
+    ]));
+    sections.push(createDay('Day 3: Legs (Quad Focus)', [
+      { pattern: 'squat', category: 'Legs' },
+      { pattern: 'leg_press', category: 'Legs' },
+      { pattern: 'lunge', category: 'Legs' },
+      { pattern: 'calf', category: 'Legs' }
+    ]));
+    sections.push(createDay('Day 4: Upper Body (Arms & Delts Priority)', [
+      { pattern: 'incline_push', category: 'Chest' },
+      { pattern: 'horizontal_pull', category: 'Back' },
+      { pattern: 'lateral_delt', category: 'Shoulders' },
+      { pattern: 'bicep_curl', category: 'Biceps' },
+      { pattern: 'tricep_ext', category: 'Triceps' }
+    ]));
+    sections.push(createDay('Day 5: Lower Body & Core (Posterior Focus)', [
+      { pattern: 'hinge', category: 'Legs' },
+      { pattern: 'hip_thrust', category: 'Legs' },
+      { pattern: 'calf', category: 'Legs' },
+      { pattern: 'abs', category: 'Abs' }
+    ]));
+  } else { // 6 Days Push/Pull/Legs
+    sections.push(createDay('Day 1: Push A (Heavy Compound)', [
+      { pattern: 'horizontal_push', category: 'Chest' },
+      { pattern: 'vertical_push', category: 'Shoulders' },
+      { pattern: 'incline_push', category: 'Chest' },
+      { pattern: 'lateral_delt', category: 'Shoulders' },
+      { pattern: 'tricep_ext', category: 'Triceps' }
+    ]));
+    sections.push(createDay('Day 2: Pull A (Heavy Compound)', [
+      { pattern: 'deadlift', category: 'Back' },
+      { pattern: 'vertical_pull', category: 'Back' },
+      { pattern: 'horizontal_pull', category: 'Back' },
+      { pattern: 'rear_delt', category: 'Shoulders' },
+      { pattern: 'bicep_curl', category: 'Biceps' }
+    ]));
+    sections.push(createDay('Day 3: Legs A (Quad Dominant)', [
+      { pattern: 'squat', category: 'Legs' },
+      { pattern: 'leg_press', category: 'Legs' },
+      { pattern: 'lunge', category: 'Legs' },
+      { pattern: 'calf', category: 'Legs' },
+      { pattern: 'abs', category: 'Abs' }
+    ]));
+    sections.push(createDay('Day 4: Push B (Hypertrophy & Pump)', [
+      { pattern: 'incline_push', category: 'Chest' },
+      { pattern: 'chest_fly', category: 'Chest' },
+      { pattern: 'lateral_delt', category: 'Shoulders' },
+      { pattern: 'tricep_ext', category: 'Triceps' },
+      { pattern: 'abs', category: 'Abs' }
+    ]));
+    sections.push(createDay('Day 5: Pull B (Hypertrophy & Width)', [
+      { pattern: 'vertical_pull', category: 'Back' },
+      { pattern: 'horizontal_pull', category: 'Back' },
+      { pattern: 'rear_delt', category: 'Shoulders' },
+      { pattern: 'bicep_curl', category: 'Biceps' },
+      { pattern: 'abs', category: 'Abs' }
+    ]));
+    sections.push(createDay('Day 6: Legs B (Hamstring & Glute Focus)', [
+      { pattern: 'hinge', category: 'Legs' },
+      { pattern: 'hip_thrust', category: 'Legs' },
+      { pattern: 'lunge', category: 'Legs' },
+      { pattern: 'calf', category: 'Legs' }
+    ]));
+  }
+
+  const injuryNote = wizardState.injuries.size > 0 
+    ? ` Joint Safeguards: ${Array.from(wizardState.injuries).join(', ')}.` 
+    : '';
+
+  currentRoutine = {
+    id: `smart_${Date.now()}`,
+    title: `Custom ${wizardState.goal.toUpperCase()} (${days}-Day ${wizardState.equipmentPreset.replace('_', ' ')})`,
+    days: days,
+    category: wizardState.goal.charAt(0).toUpperCase() + wizardState.goal.slice(1),
+    notes: `Tailored for ${wizardState.experience} lifter.${injuryNote} Equipment: ${wizardState.equipmentPreset}.`,
+    sections: sections
+  };
 
   document.getElementById('routine-name').value = currentRoutine.title;
   document.getElementById('routine-notes').value = currentRoutine.notes;

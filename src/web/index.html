@@ -132,76 +132,270 @@
 
     <!-- Smart Wizard Modal -->
     <div id="modal-wizard" class="modal-backdrop hidden">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-lg">
         <div class="modal-header">
-          <h2>✨ Smart Routine Generator</h2>
+          <div class="wizard-header-title">
+            <h2>✨ Smart Workout Questionnaire</h2>
+            <span class="wizard-subtitle">Personalized routine generated to your exact equipment, schedule & joints</span>
+          </div>
           <button class="modal-close" id="btn-close-wizard">&times;</button>
         </div>
+
+        <!-- Wizard Progress Bar -->
+        <div class="wizard-progress">
+          <div class="wizard-step-item active" data-step="1">
+            <div class="step-circle">1</div>
+            <span>Schedule</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="wizard-step-item" data-step="2">
+            <div class="step-circle">2</div>
+            <span>Equipment</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="wizard-step-item" data-step="3">
+            <div class="step-circle">3</div>
+            <span>Injuries</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="wizard-step-item" data-step="4">
+            <div class="step-circle">4</div>
+            <span>Avoid & Focus</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="wizard-step-item" data-step="5">
+            <div class="step-circle">5</div>
+            <span>Review</span>
+          </div>
+        </div>
+
         <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Primary Goal</label>
-            <div class="select-grid">
-              <button type="button" class="choice-btn active" data-group="goal" data-value="hypertrophy">
-                <strong>Hypertrophy</strong>
-                <span>Muscle Growth & Aesthetics</span>
-              </button>
-              <button type="button" class="choice-btn" data-group="goal" data-value="strength">
-                <strong>Strength</strong>
-                <span>Barbell & Compound Power</span>
-              </button>
-              <button type="button" class="choice-btn" data-group="goal" data-value="general_fitness">
-                <strong>General Fitness</strong>
-                <span>Conditioning & Health</span>
-              </button>
+          <!-- Step 1: Schedule & Goals -->
+          <div class="wizard-step-content" id="wizard-step-1">
+            <div class="form-group">
+              <label class="form-label">How many days per week can you train?</label>
+              <div class="days-selector">
+                <button type="button" class="day-btn" data-days="2">
+                  <strong>2 Days</strong>
+                  <span class="subtext">Full Body A/B</span>
+                </button>
+                <button type="button" class="day-btn" data-days="3">
+                  <strong>3 Days</strong>
+                  <span class="subtext">Full Body or PPL</span>
+                </button>
+                <button type="button" class="day-btn active" data-days="4">
+                  <strong>4 Days</strong>
+                  <span class="subtext">Upper / Lower Split</span>
+                </button>
+                <button type="button" class="day-btn" data-days="5">
+                  <strong>5 Days</strong>
+                  <span class="subtext">Upper / Lower + PPL</span>
+                </button>
+                <button type="button" class="day-btn" data-days="6">
+                  <strong>6 Days</strong>
+                  <span class="subtext">Push / Pull / Legs</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">What is your primary goal?</label>
+              <div class="select-grid select-grid-2">
+                <button type="button" class="choice-btn active" data-group="goal" data-value="hypertrophy">
+                  <strong>💪 Hypertrophy (Muscle Growth)</strong>
+                  <span>8–12 rep range, balanced volume & pump</span>
+                </button>
+                <button type="button" class="choice-btn" data-group="goal" data-value="strength">
+                  <strong>🏋️ Strength & Power</strong>
+                  <span>3–6 rep range, compound progressive overload</span>
+                </button>
+                <button type="button" class="choice-btn" data-group="goal" data-value="general_fitness">
+                  <strong>⚡ General Fitness & Health</strong>
+                  <span>10–15 rep range, conditioning & stamina</span>
+                </button>
+                <button type="button" class="choice-btn" data-group="goal" data-value="fat_loss">
+                  <strong>🔥 Fat Loss & Conditioning</strong>
+                  <span>Supersets, higher density & caloric burn</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">Experience Level</label>
+                <div class="select-grid select-grid-3">
+                  <button type="button" class="choice-btn" data-group="experience" data-value="beginner">Beginner</button>
+                  <button type="button" class="choice-btn active" data-group="experience" data-value="intermediate">Intermediate</button>
+                  <button type="button" class="choice-btn" data-group="experience" data-value="advanced">Advanced</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Session Duration Target</label>
+                <div class="select-grid select-grid-3">
+                  <button type="button" class="choice-btn" data-group="duration" data-value="express">30-40 min<br><span>(3-4 ex)</span></button>
+                  <button type="button" class="choice-btn active" data-group="duration" data-value="standard">45-60 min<br><span>(5-6 ex)</span></button>
+                  <button type="button" class="choice-btn" data-group="duration" data-value="extended">60-75 min<br><span>(7-8 ex)</span></button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Days Per Week</label>
-            <div class="days-selector">
-              <button type="button" class="day-btn" data-days="2">2 Days</button>
-              <button type="button" class="day-btn" data-days="3">3 Days</button>
-              <button type="button" class="day-btn active" data-days="4">4 Days</button>
-              <button type="button" class="day-btn" data-days="5">5 Days</button>
-              <button type="button" class="day-btn" data-days="6">6 Days</button>
+          <!-- Step 2: Equipment Availability -->
+          <div class="wizard-step-content hidden" id="wizard-step-2">
+            <div class="form-group">
+              <label class="form-label">Primary Training Setup</label>
+              <div class="select-grid select-grid-2">
+                <button type="button" class="choice-btn active" data-group="equipment" data-value="full_gym">
+                  <strong>🏢 Full Commercial Gym</strong>
+                  <span>Barbells, Dumbbells, Cable Pulleys, Machines</span>
+                </button>
+                <button type="button" class="choice-btn" data-group="equipment" data-value="barbell_rack">
+                  <strong>🏠 Home Barbell & Squat Rack</strong>
+                  <span>Barbell, Weight Plates, Bench & Rack</span>
+                </button>
+                <button type="button" class="choice-btn" data-group="equipment" data-value="dumbbells_only">
+                  <strong>🔩 Dumbbells & Bench Only</strong>
+                  <span>Adjustable or fixed dumbbells and bench</span>
+                </button>
+                <button type="button" class="choice-btn" data-group="equipment" data-value="bodyweight_only">
+                  <strong>🤸 Calisthenics & Bodyweight</strong>
+                  <span>Pull-up bar, dip bars, bodyweight movements</span>
+                </button>
+                <button type="button" class="choice-btn" data-group="equipment" data-value="kettlebells_bands">
+                  <strong>🪢 Kettlebells & Bands</strong>
+                  <span>Kettlebells, loop bands & floor space</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Specific Gear Available (Fine-tune)</label>
+              <div class="chip-grid" id="gear-chips">
+                <label class="chip-item active"><input type="checkbox" checked value="barbell"> <span>Barbell & Plates</span></label>
+                <label class="chip-item active"><input type="checkbox" checked value="dumbbells"> <span>Dumbbells</span></label>
+                <label class="chip-item active"><input type="checkbox" checked value="bench"> <span>Adjustable Bench</span></label>
+                <label class="chip-item active"><input type="checkbox" checked value="rack"> <span>Squat Rack / Cage</span></label>
+                <label class="chip-item active"><input type="checkbox" checked value="cables"> <span>Cable Pulleys</span></label>
+                <label class="chip-item active"><input type="checkbox" checked value="pullup_bar"> <span>Pull-Up Bar</span></label>
+                <label class="chip-item active"><input type="checkbox" checked value="dip_station"> <span>Dip Station</span></label>
+                <label class="chip-item active"><input type="checkbox" checked value="machines"> <span>Leg / Chest Machines</span></label>
+                <label class="chip-item"><input type="checkbox" value="kettlebell"> <span>Kettlebells</span></label>
+                <label class="chip-item"><input type="checkbox" value="bands"> <span>Resistance Bands</span></label>
+              </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Equipment Access</label>
-            <div class="select-grid">
-              <button type="button" class="choice-btn active" data-group="equipment" data-value="full_gym">
-                <strong>Full Gym</strong>
-                <span>Barbells, Cables, Machines</span>
-              </button>
-              <button type="button" class="choice-btn" data-group="equipment" data-value="barbell_rack">
-                <strong>Home Barbell Rack</strong>
-                <span>Barbell, Plates, Bench</span>
-              </button>
-              <button type="button" class="choice-btn" data-group="equipment" data-value="dumbbells_only">
-                <strong>Dumbbells Only</strong>
-                <span>Adjustable / DB Bench</span>
-              </button>
-              <button type="button" class="choice-btn" data-group="equipment" data-value="bodyweight_only">
-                <strong>Calisthenics</strong>
-                <span>Pull-up Bar & Bodyweight</span>
-              </button>
+          <!-- Step 3: Injuries & Joint Limitations -->
+          <div class="wizard-step-content hidden" id="wizard-step-3">
+            <div class="info-alert">
+              <span>🛡️</span>
+              <p>Select any joints or areas with pain or past injuries. The generator will automatically substitute risky exercises with joint-friendly, spine-sparing alternatives.</p>
+            </div>
+
+            <div class="injury-grid" id="injury-selector">
+              <div class="injury-card" data-injury="lower_back">
+                <div class="injury-header">
+                  <span class="injury-icon">🦴</span>
+                  <strong>Lower Back / Spine</strong>
+                </div>
+                <p>Avoids heavy axial loading (axial squats & conventional deadlifts). Swaps to chest-supported rows, leg press, and supported lunges.</p>
+              </div>
+
+              <div class="injury-card" data-injury="shoulder">
+                <div class="injury-header">
+                  <span class="injury-icon">💪</span>
+                  <strong>Shoulder / Impingement</strong>
+                </div>
+                <p>Avoids behind-the-neck presses, harsh straight-bar OHP, and deep wide dips. Swaps to neutral-grip DB presses, landmine, and cable flyes.</p>
+              </div>
+
+              <div class="injury-card" data-injury="knee">
+                <div class="injury-header">
+                  <span class="injury-icon">🦵</span>
+                  <strong>Knees / Patellar Pain</strong>
+                </div>
+                <p>Avoids heavy leg extensions and deep forward lunges. Swaps to box squats, Romanian deadlifts, hamstring curls, and glute bridges.</p>
+              </div>
+
+              <div class="injury-card" data-injury="wrist">
+                <div class="injury-header">
+                  <span class="injury-icon">✋</span>
+                  <strong>Wrists / Forearms</strong>
+                </div>
+                <p>Avoids straight barbell curls and straight bar press strains. Swaps to EZ-curl bar, neutral dumbbells, and cable attachments.</p>
+              </div>
+
+              <div class="injury-card" data-injury="neck">
+                <div class="injury-header">
+                  <span class="injury-icon">🧣</span>
+                  <strong>Neck / Cervical Spine</strong>
+                </div>
+                <p>Avoids high-bar trap resting placements and behind-neck movements. Swaps to front squats and dumbbell goblet squats.</p>
+              </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Experience Level</label>
-            <div class="select-grid select-grid-3">
-              <button type="button" class="choice-btn" data-group="experience" data-value="beginner">Beginner</button>
-              <button type="button" class="choice-btn active" data-group="experience" data-value="intermediate">Intermediate</button>
-              <button type="button" class="choice-btn" data-group="experience" data-value="advanced">Advanced</button>
+          <!-- Step 4: Avoid & Target Focus -->
+          <div class="wizard-step-content hidden" id="wizard-step-4">
+            <div class="form-group">
+              <label class="form-label">Specific Exercises You Dislike or Want to Avoid</label>
+              <p class="field-hint">Click to toggle common exercises you want excluded from your generated routine:</p>
+              <div class="chip-grid avoid-chip-grid" id="avoid-chips">
+                <button type="button" class="avoid-chip" data-exercise="Conventional Deadlift">❌ Conventional Deadlift</button>
+                <button type="button" class="avoid-chip" data-exercise="Barbell Back Squat">❌ Barbell Back Squat</button>
+                <button type="button" class="avoid-chip" data-exercise="Flat Barbell Bench Press">❌ Flat Barbell Bench Press</button>
+                <button type="button" class="avoid-chip" data-exercise="Overhead Press (Barbell)">❌ Overhead Barbell Press</button>
+                <button type="button" class="avoid-chip" data-exercise="Pull Up">❌ Pull Ups</button>
+                <button type="button" class="avoid-chip" data-exercise="Dips (Chest)">❌ Dips</button>
+                <button type="button" class="avoid-chip" data-exercise="Bulgarian Split Squat">❌ Bulgarian Split Squats</button>
+                <button type="button" class="avoid-chip" data-exercise="Barbell Bent-Over Row">❌ Barbell Bent-Over Row</button>
+                <button type="button" class="avoid-chip" data-exercise="Skull Crusher (EZ Bar)">❌ Skull Crushers</button>
+                <button type="button" class="avoid-chip" data-exercise="Walking Lunge">❌ Lunges</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="custom-avoid-input">Other Custom Exercises to Avoid (Comma Separated)</label>
+              <input type="text" id="custom-avoid-input" class="text-input" placeholder="e.g. Leg Extension, Incline Barbell Bench, Burpees" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Target Muscle Focus (Optional Priority Boost)</label>
+              <div class="select-grid select-grid-3">
+                <button type="button" class="choice-btn active" data-group="focus" data-value="balanced">Balanced (All Equal)</button>
+                <button type="button" class="choice-btn" data-group="focus" data-value="chest_arms">Chest & Arms</button>
+                <button type="button" class="choice-btn" data-group="focus" data-value="back_width">Back & V-Taper</button>
+                <button type="button" class="choice-btn" data-group="focus" data-value="legs_glutes">Legs & Glutes</button>
+                <button type="button" class="choice-btn" data-group="focus" data-value="shoulders">Shoulder Width</button>
+                <button type="button" class="choice-btn" data-group="focus" data-value="core_abs">Core & Posterior</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 5: Review & Generate -->
+          <div class="wizard-step-content hidden" id="wizard-step-5">
+            <div class="summary-card">
+              <h3>📋 Your Personalized Template Plan</h3>
+              <div class="summary-grid" id="summary-preview">
+                <!-- Dynamically updated by JS -->
+              </div>
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button id="btn-generate-smart" class="btn btn-primary btn-block btn-lg">
-            <span>✨</span> Generate Workout Template
+
+        <div class="modal-footer wizard-footer">
+          <button id="btn-wizard-prev" class="btn btn-secondary hidden">
+            <span>←</span> Back
           </button>
+          <div class="wizard-footer-right">
+            <button id="btn-wizard-next" class="btn btn-primary">
+              Next <span>→</span>
+            </button>
+            <button id="btn-generate-smart" class="btn btn-success btn-lg glow-btn hidden">
+              <span>✨</span> Generate Workout Template
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -28,9 +28,25 @@ class TestSmartGenerator(unittest.TestCase):
         )
         self.assertEqual(len(r2.sections), 5)
 
+        # Test 4-day with lower back injury and avoided exercises
+        r3 = SmartWorkoutGenerator.generate(
+            goal=WorkoutGoal.HYPERTROPHY,
+            days_per_week=4,
+            experience=ExperienceLevel.INTERMEDIATE,
+            equipment=EquipmentType.FULL_GYM,
+            injuries=["lower_back"],
+            avoid_exercises=["Flat Barbell Bench Press"],
+            duration="express",
+        )
+        self.assertEqual(len(r3.sections), 4)
+        for sec in r3.sections:
+            self.assertLessEqual(len(sec.exercises), 4)
+            for ex in sec.exercises:
+                self.assertNotIn(ex.exercise_name, ["Conventional Deadlift", "Barbell Back Squat", "Flat Barbell Bench Press"])
+
         # Insert into database
         db = FitNotesDatabase.create_empty()
-        r_id = db.add_routine(r2)
+        r_id = db.add_routine(r3)
         self.assertGreater(r_id, 0)
         db.close()
 
