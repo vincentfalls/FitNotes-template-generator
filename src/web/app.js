@@ -402,6 +402,8 @@ function renderRoutineBuilder() {
       exItem.className = 'exercise-item';
 
       const catColor = getCategoryColor(ex.category);
+      const strategy = ex.strategy || 'predefined';
+      const restTime = ex.restTime || 90;
 
       let optionsHtml = '';
       DEFAULT_EXERCISES.forEach(defEx => {
@@ -409,26 +411,124 @@ function renderRoutineBuilder() {
         optionsHtml += `<option value="${defEx.name}" data-cat="${defEx.category}" ${selected}>${defEx.name} (${defEx.category})</option>`;
       });
 
-      exItem.innerHTML = `
-        <span class="exercise-num">${eIdx + 1}</span>
-        <div class="exercise-select-wrapper">
-          <select class="exercise-select" data-sidx="${sIdx}" data-eidx="${eIdx}">
-            ${optionsHtml}
-          </select>
-          <span class="exercise-category-badge" style="background:${catColor}20; color:${catColor};">
-            ${ex.category || 'Chest'}
-          </span>
-        </div>
-        <div class="input-pill">
-          <label>Sets</label>
-          <input type="number" min="1" max="20" value="${ex.sets || 3}" data-sidx="${sIdx}" data-eidx="${eIdx}" class="input-sets" />
-        </div>
-        <div class="input-pill">
-          <label>Reps</label>
-          <input type="number" min="1" max="100" value="${ex.reps || 10}" data-sidx="${sIdx}" data-eidx="${eIdx}" class="input-reps" />
-        </div>
-        <button class="btn-icon" onclick="removeExercise(${sIdx}, ${eIdx})" title="Remove Exercise">✕</button>
+      // Strategy options HTML
+      const stratOptions = `
+        <select class="strategy-select" data-sidx="${sIdx}" data-eidx="${eIdx}">
+          <option value="predefined" ${strategy === 'predefined' ? 'selected' : ''}>📋 Predefined Sets</option>
+          <option value="percent_1rm" ${strategy === 'percent_1rm' ? 'selected' : ''}>📊 % of 1RM</option>
+          <option value="copy_previous" ${strategy === 'copy_previous' ? 'selected' : ''}>🔄 Copy Previous</option>
+          <option value="blank" ${strategy === 'blank' ? 'selected' : ''}>🚫 Don't Populate</option>
+        </select>
       `;
+
+      let setsControlsHtml = '';
+      if (strategy === 'predefined') {
+        setsControlsHtml = `
+          <div class="input-pill">
+            <label>Sets</label>
+            <input type="number" min="1" max="20" value="${ex.sets || 3}" data-sidx="${sIdx}" data-eidx="${eIdx}" class="input-sets" />
+          </div>
+          <div class="input-pill">
+            <label>Reps</label>
+            <input type="number" min="1" max="100" value="${ex.reps || 10}" data-sidx="${sIdx}" data-eidx="${eIdx}" class="input-reps" />
+          </div>
+        `;
+      } else if (strategy === 'percent_1rm') {
+        setsControlsHtml = `
+          <div class="input-pill" style="border-color: rgba(59,130,246,0.5);">
+            <label style="color:#60a5fa;">Sets</label>
+            <span style="font-size:12px; font-weight:700; color:#bfdbfe;">${(ex.percentSets || []).length || 3} Waves</span>
+          </div>
+        `;
+      } else if (strategy === 'copy_previous') {
+        setsControlsHtml = `
+          <div style="font-size:11px; color:#94a3b8; font-style:italic;">Auto-copy last log</div>
+        `;
+      } else {
+        setsControlsHtml = `
+          <div style="font-size:11px; color:#94a3b8; font-style:italic;">Blank sets</div>
+        `;
+      }
+
+      exItem.innerHTML = `
+        <div class="exercise-main-row">
+          <span class="exercise-num">${eIdx + 1}</span>
+          <div class="exercise-select-wrapper">
+            <select class="exercise-select" data-sidx="${sIdx}" data-eidx="${eIdx}">
+              ${optionsHtml}
+            </select>
+            <span class="exercise-category-badge" style="background:${catColor}20; color:${catColor};">
+              ${ex.category || 'Chest'}
+            </span>
+          </div>
+          <div>${stratOptions}</div>
+          <div class="input-pill" title="Rest Timer (seconds)">
+            <label>⏱️</label>
+            <input type="number" min="0" max="600" step="15" value="${restTime}" data-sidx="${sIdx}" data-eidx="${eIdx}" class="input-rest" />
+            <span style="font-size:10px; color:var(--text-muted); margin-left:2px;">s</span>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            ${setsControlsHtml}
+          </div>
+          <button class="btn-icon" onclick="removeExercise(${sIdx}, ${eIdx})" title="Remove Exercise">✕</button>
+        </div>
+      `;
+
+      // If % of 1RM is active, render interactive percent set rows
+      if (strategy === 'percent_1rm') {
+        if (!ex.percentSets || ex.percentSets.length === 0) {
+          ex.percentSets = [
+            { percent: 70.0, reps: 5 },
+            { percent: 80.0, reps: 5 },
+            { percent: 90.0, reps: 3 }
+          ];
+        }
+
+        const percentContainer = document.createElement('div');
+        percentContainer.className = 'percent-sets-container';
+        
+        let percentCardsHtml = '';
+        ex.percentSets.forEach((pSet, pIdx) => {
+          percentCardsHtml += `
+            <div class="percent-set-card">
+              <span class="percent-set-label">Set ${pIdx + 1}:</span>
+              <input type="number" min="10" max="150" step="2.5" value="${pSet.percent}" class="percent-input" data-sidx="${sIdx}" data-eidx="${eIdx}" data-pidx="${pIdx}" />
+              <span style="font-size:11px; color:#60a5fa; font-weight:700;">%</span>
+              <span style="font-size:11px; color:var(--text-muted);">×</span>
+              <input type="number" min="1" max="50" value="${pSet.reps}" class="reps-input-sm" data-sidx="${sIdx}" data-eidx="${eIdx}" data-pidx="${pIdx}" />
+              <span style="font-size:11px; color:var(--text-muted);">r</span>
+              <button class="btn-icon" style="padding:2px 4px; font-size:10px;" onclick="removePercentSet(${sIdx}, ${eIdx}, ${pIdx})" title="Remove Set">✕</button>
+            </div>
+          `;
+        });
+
+        percentContainer.innerHTML = `
+          <div class="percent-sets-header">
+            <span>🎯 % of Training Max / 1RM Sets</span>
+            <button class="btn-add-set-sm" onclick="addPercentSet(${sIdx}, ${eIdx})">+ Add % Set</button>
+          </div>
+          <div class="percent-set-grid">
+            ${percentCardsHtml}
+          </div>
+        `;
+
+        exItem.appendChild(percentContainer);
+
+        // Bind % and Rep inputs
+        percentContainer.querySelectorAll('.percent-input').forEach(pInp => {
+          pInp.onchange = (e) => {
+            const pIdx = parseInt(e.target.getAttribute('data-pidx'), 10);
+            currentRoutine.sections[sIdx].exercises[eIdx].percentSets[pIdx].percent = parseFloat(e.target.value) || 75.0;
+          };
+        });
+
+        percentContainer.querySelectorAll('.reps-input-sm').forEach(rInp => {
+          rInp.onchange = (e) => {
+            const pIdx = parseInt(e.target.getAttribute('data-pidx'), 10);
+            currentRoutine.sections[sIdx].exercises[eIdx].percentSets[pIdx].reps = parseInt(e.target.value, 10) || 5;
+          };
+        });
+      }
 
       exContainer.appendChild(exItem);
 
@@ -441,13 +541,39 @@ function renderRoutineBuilder() {
         renderRoutineBuilder();
       };
 
-      exItem.querySelector('.input-sets').onchange = (e) => {
-        currentRoutine.sections[sIdx].exercises[eIdx].sets = parseInt(e.target.value, 10) || 3;
+      const stratSelect = exItem.querySelector('.strategy-select');
+      stratSelect.onchange = (e) => {
+        currentRoutine.sections[sIdx].exercises[eIdx].strategy = e.target.value;
+        if (e.target.value === 'percent_1rm' && !currentRoutine.sections[sIdx].exercises[eIdx].percentSets) {
+          currentRoutine.sections[sIdx].exercises[eIdx].percentSets = [
+            { percent: 70.0, reps: 5 },
+            { percent: 80.0, reps: 5 },
+            { percent: 90.0, reps: 3 }
+          ];
+        }
+        renderRoutineBuilder();
       };
 
-      exItem.querySelector('.input-reps').onchange = (e) => {
-        currentRoutine.sections[sIdx].exercises[eIdx].reps = parseInt(e.target.value, 10) || 10;
-      };
+      const restInput = exItem.querySelector('.input-rest');
+      if (restInput) {
+        restInput.onchange = (e) => {
+          currentRoutine.sections[sIdx].exercises[eIdx].restTime = parseInt(e.target.value, 10) || 90;
+        };
+      }
+
+      const setsInp = exItem.querySelector('.input-sets');
+      if (setsInp) {
+        setsInp.onchange = (e) => {
+          currentRoutine.sections[sIdx].exercises[eIdx].sets = parseInt(e.target.value, 10) || 3;
+        };
+      }
+
+      const repsInp = exItem.querySelector('.input-reps');
+      if (repsInp) {
+        repsInp.onchange = (e) => {
+          currentRoutine.sections[sIdx].exercises[eIdx].reps = parseInt(e.target.value, 10) || 10;
+        };
+      }
     });
   });
 }
@@ -468,7 +594,9 @@ window.addExerciseToSection = function(sIdx) {
     name: def.name,
     category: def.category,
     sets: 3,
-    reps: 10
+    reps: 10,
+    strategy: 'predefined',
+    restTime: 90
   });
   renderRoutineBuilder();
 };
@@ -476,6 +604,24 @@ window.addExerciseToSection = function(sIdx) {
 window.removeExercise = function(sIdx, eIdx) {
   currentRoutine.sections[sIdx].exercises.splice(eIdx, 1);
   renderRoutineBuilder();
+};
+
+window.addPercentSet = function(sIdx, eIdx) {
+  const ex = currentRoutine.sections[sIdx].exercises[eIdx];
+  if (!ex.percentSets) ex.percentSets = [];
+  const lastPercent = ex.percentSets.length > 0 ? ex.percentSets[ex.percentSets.length - 1].percent + 5.0 : 70.0;
+  ex.percentSets.push({ percent: Math.min(120, lastPercent), reps: 5 });
+  renderRoutineBuilder();
+};
+
+window.removePercentSet = function(sIdx, eIdx, pIdx) {
+  const ex = currentRoutine.sections[sIdx].exercises[eIdx];
+  if (ex.percentSets && ex.percentSets.length > 1) {
+    ex.percentSets.splice(pIdx, 1);
+    renderRoutineBuilder();
+  } else {
+    showToast('Exercise must have at least 1 set.');
+  }
 };
 
 // Add New Section
@@ -642,26 +788,46 @@ document.getElementById('btn-export-fitnotes').onclick = async () => {
     const secId = db.exec("SELECT last_insert_rowid();")[0].values[0][0];
 
     sec.exercises.forEach((rEx, eIdx) => {
+      const restTime = rEx.restTime || 90;
+      const weightInc = wizardState.weightUnit === 'lbs' ? 5.0 : 2.5;
+
       // Find or create exercise
       let exRes = db.exec("SELECT id FROM exercise WHERE LOWER(name) = LOWER(?);", [rEx.name]);
       let exId;
       if (exRes.length > 0) {
         exId = exRes[0].values[0][0];
+        try {
+          db.run("UPDATE exercise SET default_rest_time = ?, weight_increment = ? WHERE id = ?;", [restTime, weightInc, exId]);
+        } catch (e) {}
       } else {
         const catRes = db.exec("SELECT id FROM Category WHERE LOWER(name) = LOWER(?);", [rEx.category || 'Other']);
         const catId = catRes.length > 0 ? catRes[0].values[0][0] : 1;
-        db.run("INSERT INTO exercise (name, category_id, exercise_type_id, weight_increment) VALUES (?, ?, 1, 2.5);", [rEx.name, catId]);
+        db.run("INSERT INTO exercise (name, category_id, exercise_type_id, weight_increment, default_rest_time) VALUES (?, ?, 1, ?, ?);", [rEx.name, catId, weightInc, restTime]);
         exId = db.exec("SELECT last_insert_rowid();")[0].values[0][0];
       }
 
       db.run("INSERT INTO RoutineSectionExercise (routine_section_id, exercise_id, sort_order) VALUES (?, ?, ?);", [secId, exId, eIdx]);
       const secExId = db.exec("SELECT last_insert_rowid();")[0].values[0][0];
 
-      const setCount = rEx.sets || 3;
-      const repCount = rEx.reps || 10;
-      for (let s = 0; s < setCount; s++) {
-        db.run("INSERT INTO RoutineSectionExerciseSet (routine_section_exercise_id, metric_weight, reps, sort_order) VALUES (?, 0, ?, ?);", [secExId, repCount, s]);
+      const strategy = rEx.strategy || 'predefined';
+
+      if (strategy === 'percent_1rm') {
+        const percentSets = rEx.percentSets || [
+          { percent: 70.0, reps: 5 },
+          { percent: 80.0, reps: 5 },
+          { percent: 90.0, reps: 3 }
+        ];
+        percentSets.forEach((pSet, s) => {
+          db.run("INSERT INTO RoutineSectionExerciseSet (routine_section_exercise_id, metric_weight, reps, sort_order) VALUES (?, ?, ?, ?);", [secExId, pSet.percent, pSet.reps, s]);
+        });
+      } else if (strategy === 'predefined') {
+        const setCount = rEx.sets || 3;
+        const repCount = rEx.reps || 10;
+        for (let s = 0; s < setCount; s++) {
+          db.run("INSERT INTO RoutineSectionExerciseSet (routine_section_exercise_id, metric_weight, reps, sort_order) VALUES (?, 0, ?, ?);", [secExId, repCount, s]);
+        }
       }
+      // If 'copy_previous' or 'blank', no sets are inserted into RoutineSectionExerciseSet
     });
   });
 
@@ -819,6 +985,10 @@ const wizardState = {
   experience: 'intermediate',
   duration: 'standard',
   equipmentPreset: 'full_gym',
+  setStrategy: 'predefined',
+  oneRmScheme: 'strength_ramp',
+  restTimer: 'smart',
+  weightUnit: 'lbs',
   gear: new Set(['barbell', 'dumbbells', 'bench', 'rack', 'cables', 'pullup_bar', 'dip_station', 'machines']),
   injuries: new Set(),
   avoidedExercises: new Set(),
@@ -892,6 +1062,20 @@ function renderWizardSummary() {
     extended: 'Extended (60-75 min, 7-8 exercises)'
   };
 
+  const strategyLabels = {
+    predefined: '📋 Predefined Sets (Target Reps)',
+    percent_1rm: `📊 % of 1RM (${wizardState.oneRmScheme.replace('_', ' ').toUpperCase()})`,
+    copy_previous: '🔄 Copy Previous Sets (History)',
+    blank: '🚫 Don\'t Populate Sets (Blank)'
+  };
+
+  const restLabels = {
+    smart: '⚡ Smart Auto (180s/90s/60s)',
+    '120': '⏱️ 120s Rest',
+    '90': '⏱️ 90s Rest',
+    '60': '⏱️ 60s Rest'
+  };
+
   const gearArray = Array.from(wizardState.gear);
   const injuryArray = Array.from(wizardState.injuries);
   
@@ -911,6 +1095,14 @@ function renderWizardSummary() {
     <div class="summary-item">
       <span class="summary-item-label">Level & Duration</span>
       <span class="summary-item-value">${wizardState.experience.toUpperCase()} • ${durationLabels[wizardState.duration] || wizardState.duration}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-item-label">Set Progression Strategy</span>
+      <span class="summary-item-value" style="color:#60a5fa;">${strategyLabels[wizardState.setStrategy] || wizardState.setStrategy}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-item-label">Rest Timers & Units</span>
+      <span class="summary-item-value">${restLabels[wizardState.restTimer] || wizardState.restTimer} • ${wizardState.weightUnit.toUpperCase()}</span>
     </div>
     <div class="summary-item">
       <span class="summary-item-label">Equipment Access</span>
@@ -1015,6 +1207,59 @@ function pickExercise(pattern, preferredCategory, usedNames) {
   return defaultEx;
 }
 
+// 1RM Wave Percentage Schemes Generator
+function generateOneRmSets(isCompound) {
+  if (wizardState.oneRmScheme === 'wendler_wave') {
+    if (isCompound) {
+      return [
+        { percent: 65.0, reps: 5 },
+        { percent: 75.0, reps: 5 },
+        { percent: 85.0, reps: 5 }
+      ];
+    } else {
+      return [
+        { percent: 60.0, reps: 10 },
+        { percent: 70.0, reps: 10 },
+        { percent: 75.0, reps: 8 }
+      ];
+    }
+  } else if (wizardState.oneRmScheme === 'hypertrophy_wave') {
+    return [
+      { percent: 65.0, reps: 10 },
+      { percent: 70.0, reps: 10 },
+      { percent: 75.0, reps: 8 },
+      { percent: 80.0, reps: 6 }
+    ];
+  } else { // strength_ramp default
+    if (isCompound) {
+      return [
+        { percent: 70.0, reps: 5 },
+        { percent: 80.0, reps: 5 },
+        { percent: 90.0, reps: 3 }
+      ];
+    } else {
+      return [
+        { percent: 65.0, reps: 8 },
+        { percent: 75.0, reps: 8 },
+        { percent: 80.0, reps: 6 }
+      ];
+    }
+  }
+}
+
+// Rest Time Calculation Helper
+function getRestTimeForExercise(isCompound, category) {
+  if (wizardState.restTimer !== 'smart') {
+    return parseInt(wizardState.restTimer, 10) || 90;
+  }
+  if (isCompound) {
+    if (category === 'Legs' || category === 'Back') return 180;
+    return 120;
+  }
+  if (category === 'Abs') return 60;
+  return 90;
+}
+
 // Generate Sets based on Goal, Experience, and Compound vs Isolation
 function generateSets(isCompound) {
   let setsCount = 3;
@@ -1084,7 +1329,7 @@ document.querySelectorAll('.day-btn').forEach(btn => {
   };
 });
 
-// Choice buttons (Goal, Experience, Duration, Equipment Profile, Focus)
+// Choice buttons (Goal, Experience, Duration, Equipment Profile, Focus, SetStrategy, 1RMScheme, RestTimer, WeightUnit)
 document.querySelectorAll('.choice-btn').forEach(btn => {
   btn.onclick = () => {
     const group = btn.getAttribute('data-group');
@@ -1096,6 +1341,21 @@ document.querySelectorAll('.choice-btn').forEach(btn => {
     if (group === 'experience') wizardState.experience = val;
     if (group === 'duration') wizardState.duration = val;
     if (group === 'focus') wizardState.focus = val;
+    if (group === 'oneRmScheme') wizardState.oneRmScheme = val;
+    if (group === 'restTimer') wizardState.restTimer = val;
+    if (group === 'weightUnit') wizardState.weightUnit = val;
+
+    if (group === 'setStrategy') {
+      wizardState.setStrategy = val;
+      const oneRmEl = document.getElementById('one-rm-options');
+      if (oneRmEl) {
+        if (val === 'percent_1rm') {
+          oneRmEl.classList.remove('hidden');
+        } else {
+          oneRmEl.classList.add('hidden');
+        }
+      }
+    }
 
     if (group === 'equipment') {
       wizardState.equipmentPreset = val;
@@ -1178,12 +1438,23 @@ document.getElementById('btn-generate-smart').onclick = () => {
 
     selectedPatterns.forEach(patternInfo => {
       const match = pickExercise(patternInfo.pattern, patternInfo.category, usedInDay);
-      exercises.push({
+      const isCompound = match.compound || false;
+      const restTime = getRestTimeForExercise(isCompound, match.category);
+
+      const exObj = {
         name: match.name,
         category: match.category,
-        sets: generateSets(match.compound).length,
-        reps: generateSets(match.compound)[0].reps
-      });
+        strategy: wizardState.setStrategy,
+        restTime: restTime,
+        sets: generateSets(isCompound).length,
+        reps: generateSets(isCompound)[0].reps
+      };
+
+      if (wizardState.setStrategy === 'percent_1rm') {
+        exObj.percentSets = generateOneRmSets(isCompound);
+      }
+
+      exercises.push(exObj);
     });
 
     return { name: dayName, exercises };
@@ -1365,12 +1636,16 @@ document.getElementById('btn-generate-smart').onclick = () => {
     ? ` Joint Safeguards: ${Array.from(wizardState.injuries).join(', ')}.` 
     : '';
 
+  const stratNote = wizardState.setStrategy === 'percent_1rm' 
+    ? ` [% of 1RM: ${wizardState.oneRmScheme}]` 
+    : '';
+
   currentRoutine = {
     id: `smart_${Date.now()}`,
     title: `Custom ${wizardState.goal.toUpperCase()} (${days}-Day ${wizardState.equipmentPreset.replace('_', ' ')})`,
     days: days,
     category: wizardState.goal.charAt(0).toUpperCase() + wizardState.goal.slice(1),
-    notes: `Tailored for ${wizardState.experience} lifter.${injuryNote} Equipment: ${wizardState.equipmentPreset}.`,
+    notes: `Tailored for ${wizardState.experience} lifter.${injuryNote}${stratNote} Equipment: ${wizardState.equipmentPreset}.`,
     sections: sections
   };
 

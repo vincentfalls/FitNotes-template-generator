@@ -336,8 +336,90 @@
             </div>
           </div>
 
-          <!-- Step 4: Avoid & Target Focus -->
+          <!-- Step 4: Progression Strategy & Template Options -->
           <div class="wizard-step-content hidden" id="wizard-step-4">
+            <!-- Set Population & 1RM Strategy -->
+            <div class="form-group">
+              <label class="form-label">Set Population & Progression Strategy</label>
+              <div class="select-grid select-grid-2">
+                <button type="button" class="choice-btn active" data-group="setStrategy" data-value="predefined">
+                  <strong>📋 Use Predefined Sets</strong>
+                  <span>Standard target sets & reps (e.g. 4 × 8–12)</span>
+                </button>
+                <button type="button" class="choice-btn" data-group="setStrategy" data-value="percent_1rm">
+                  <strong>📊 % of Training Max / 1RM</strong>
+                  <span>Percentage-based loading (e.g. 70%, 80%, 90% × 5)</span>
+                </button>
+                <button type="button" class="choice-btn" data-group="setStrategy" data-value="copy_previous">
+                  <strong>🔄 Copy Previous Sets</strong>
+                  <span>Auto-loads your last workout weights & reps</span>
+                </button>
+                <button type="button" class="choice-btn" data-group="setStrategy" data-value="blank">
+                  <strong>🚫 Don't Populate Sets</strong>
+                  <span>Blank template — log on the fly</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- % of 1RM Wave Preset Options (shown when percent_1rm selected) -->
+            <div class="form-group hidden" id="one-rm-options">
+              <label class="form-label">1RM / Training Max Percentage Scheme</label>
+              <div class="select-grid select-grid-3">
+                <button type="button" class="choice-btn active" data-group="oneRmScheme" data-value="strength_ramp">
+                  <strong>Strength Ramp</strong>
+                  <span>70% × 5, 80% × 5, 90% × 3</span>
+                </button>
+                <button type="button" class="choice-btn" data-group="oneRmScheme" data-value="wendler_wave">
+                  <strong>5/3/1 Wave</strong>
+                  <span>65% × 5, 75% × 5, 85% × 5+</span>
+                </button>
+                <button type="button" class="choice-btn" data-group="oneRmScheme" data-value="hypertrophy_wave">
+                  <strong>Volume Wave</strong>
+                  <span>65% × 10, 70% × 10, 75% × 8, 80% × 6</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <!-- Rest Timers -->
+              <div class="form-group">
+                <label class="form-label">Default Rest Timers</label>
+                <div class="select-grid select-grid-2">
+                  <button type="button" class="choice-btn active" data-group="restTimer" data-value="smart">
+                    <strong>⚡ Smart Auto</strong>
+                    <span>180s heavy / 90s acc</span>
+                  </button>
+                  <button type="button" class="choice-btn" data-group="restTimer" data-value="120">
+                    <strong>⏱️ 120s Rest</strong>
+                    <span>Balanced</span>
+                  </button>
+                  <button type="button" class="choice-btn" data-group="restTimer" data-value="90">
+                    <strong>⏱️ 90s Rest</strong>
+                    <span>Hypertrophy</span>
+                  </button>
+                  <button type="button" class="choice-btn" data-group="restTimer" data-value="60">
+                    <strong>⏱️ 60s Rest</strong>
+                    <span>Fast Pace</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Weight Units & Increments -->
+              <div class="form-group">
+                <label class="form-label">Weight Unit & Increments</label>
+                <div class="select-grid select-grid-2">
+                  <button type="button" class="choice-btn active" data-group="weightUnit" data-value="lbs">
+                    <strong>Pounds (lb)</strong>
+                    <span>5 lb increments</span>
+                  </button>
+                  <button type="button" class="choice-btn" data-group="weightUnit" data-value="kg">
+                    <strong>Kilograms (kg)</strong>
+                    <span>2.5 kg increments</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div class="form-group">
               <label class="form-label">Specific Exercises You Dislike or Want to Avoid</label>
               <p class="field-hint">Click to toggle common exercises you want excluded from your generated routine:</p>
