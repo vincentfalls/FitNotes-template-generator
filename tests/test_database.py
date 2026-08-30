@@ -27,6 +27,8 @@ class TestDatabase(unittest.TestCase):
                 "RoutineSectionExerciseSet",
                 "training_log",
                 "body_tracker",
+                "body_tracker_type",
+                "settings",
             }
             self.assertTrue(required_tables.issubset(tables))
 

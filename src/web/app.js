@@ -756,8 +756,18 @@ document.getElementById('btn-export-fitnotes').onclick = async () => {
     CREATE TABLE IF NOT EXISTS RoutineSectionExercise (id INTEGER PRIMARY KEY AUTOINCREMENT, routine_section_id INTEGER NOT NULL, exercise_id INTEGER NOT NULL, sort_order INTEGER DEFAULT 0);
     CREATE TABLE IF NOT EXISTS RoutineSectionExerciseSet (id INTEGER PRIMARY KEY AUTOINCREMENT, routine_section_exercise_id INTEGER NOT NULL, metric_weight REAL DEFAULT 0, reps INTEGER DEFAULT 0, sort_order INTEGER DEFAULT 0, distance REAL DEFAULT 0, duration_seconds INTEGER DEFAULT 0, unit INTEGER DEFAULT 0);
     CREATE TABLE IF NOT EXISTS training_log (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, exercise_id INTEGER NOT NULL, metric_weight REAL DEFAULT 0, reps INTEGER DEFAULT 0, metric_distance REAL DEFAULT 0, duration_seconds INTEGER DEFAULT 0, comment TEXT, set_order INTEGER DEFAULT 0, unit INTEGER DEFAULT 0, is_personal_record INTEGER DEFAULT 0);
+    CREATE TABLE IF NOT EXISTS body_tracker_type (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, sort_order INTEGER DEFAULT 0, metric_units TEXT DEFAULT 'kg', imperial_units TEXT DEFAULT 'lbs', is_default INTEGER DEFAULT 1);
     CREATE TABLE IF NOT EXISTS body_tracker (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, body_tracker_type_id INTEGER DEFAULT 1, metric_value REAL DEFAULT 0, comment TEXT);
+    CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, value TEXT, key TEXT, unit INTEGER DEFAULT 0, first_day_of_week INTEGER DEFAULT 0, sound INTEGER DEFAULT 1, vibrate INTEGER DEFAULT 1, timer_duration INTEGER DEFAULT 90, theme INTEGER DEFAULT 0);
   `);
+
+  // Populate settings and metadata
+  try {
+    db.run("INSERT OR IGNORE INTO android_metadata (locale) VALUES ('en_US');");
+    db.run("INSERT OR IGNORE INTO settings (id, name, value, key, unit, first_day_of_week, sound, vibrate, timer_duration, theme) VALUES (1, 'default', 'default', 'version', 0, 0, 1, 1, 90, 0);");
+    db.run("INSERT OR IGNORE INTO body_tracker_type (id, name, sort_order, metric_units, imperial_units, is_default) VALUES (1, 'Body Weight', 0, 'kg', 'lbs', 1);");
+    db.run("INSERT OR IGNORE INTO body_tracker_type (id, name, sort_order, metric_units, imperial_units, is_default) VALUES (2, 'Body Fat %', 1, '%', '%', 1);");
+  } catch (e) {}
 
   // Ensure default categories
   DEFAULT_CATEGORIES.forEach(cat => {

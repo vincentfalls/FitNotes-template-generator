@@ -235,7 +235,21 @@ class FitNotesDatabase:
             );
         """)
 
-        # 6. Body Tracker / Measurements Table
+        # 6. Body Tracker Type Table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS body_tracker_type (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                sort_order INTEGER DEFAULT 0,
+                metric_units TEXT DEFAULT 'kg',
+                imperial_units TEXT DEFAULT 'lbs',
+                is_default INTEGER DEFAULT 1
+            );
+        """)
+        cursor.execute("INSERT OR IGNORE INTO body_tracker_type (id, name, sort_order, metric_units, imperial_units, is_default) VALUES (1, 'Body Weight', 0, 'kg', 'lbs', 1);")
+        cursor.execute("INSERT OR IGNORE INTO body_tracker_type (id, name, sort_order, metric_units, imperial_units, is_default) VALUES (2, 'Body Fat %', 1, '%', '%', 1);")
+
+        # 7. Body Tracker / Measurements Table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS body_tracker (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -244,6 +258,26 @@ class FitNotesDatabase:
                 metric_value REAL DEFAULT 0,
                 comment TEXT
             );
+        """)
+
+        # 8. Settings Table (Required by FitNotes 2 iOS)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                value TEXT,
+                key TEXT,
+                unit INTEGER DEFAULT 0,
+                first_day_of_week INTEGER DEFAULT 0,
+                sound INTEGER DEFAULT 1,
+                vibrate INTEGER DEFAULT 1,
+                timer_duration INTEGER DEFAULT 90,
+                theme INTEGER DEFAULT 0
+            );
+        """)
+        cursor.execute("""
+            INSERT OR IGNORE INTO settings (id, name, value, key, unit, first_day_of_week, sound, vibrate, timer_duration, theme)
+            VALUES (1, 'default', 'default', 'version', 0, 0, 1, 1, 90, 0);
         """)
 
         # Populate Default Categories
