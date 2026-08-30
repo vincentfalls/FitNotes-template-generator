@@ -1886,7 +1886,27 @@ const tabFmtText = document.getElementById('tab-fmt-text');
 const btnDoCopyTemplate = document.getElementById('btn-do-copy-template');
 const btnShareTemplateNative = document.getElementById('btn-share-template-native');
 
-let currentTemplateFormat = 'json';
+let currentTemplateFormat = 'heavyset';
+
+function generateHeavySetTextPayload() {
+  const lines = [`Routine: ${currentRoutine.title}`, ''];
+  currentRoutine.sections.forEach(sec => {
+    lines.push(`Workout: ${sec.name}`);
+    sec.exercises.forEach(ex => {
+      lines.push(ex.name);
+      if (ex.strategy === 'percent_1rm' && ex.percentSets) {
+        const waveStr = ex.percentSets.map(s => `${s.reps} reps @ ${s.percent}%`).join(', ');
+        lines.push(`${ex.percentSets.length} sets x ${ex.percentSets[0].reps} reps (${waveStr})`);
+      } else {
+        const sets = ex.sets || 3;
+        const reps = ex.reps || 10;
+        lines.push(`${sets} sets x ${reps} reps`);
+      }
+    });
+    lines.push('');
+  });
+  return lines.join('\n').trim();
+}
 
 function generateTemplateJsonPayload() {
   const payload = {
@@ -1914,29 +1934,12 @@ function generateTemplateJsonPayload() {
   return JSON.stringify(payload, null, 2);
 }
 
-function generateTemplateTextPayload() {
-  const lines = [`# ${currentRoutine.title}`, currentRoutine.notes ? `${currentRoutine.notes}\n` : ''];
-  currentRoutine.sections.forEach(sec => {
-    lines.push(`## ${sec.name}`);
-    sec.exercises.forEach(ex => {
-      if (ex.strategy === 'percent_1rm' && ex.percentSets) {
-        const waveStr = ex.percentSets.map(s => `${s.percent}% × ${s.reps}`).join(', ');
-        lines.push(`- ${ex.name} (${waveStr})`);
-      } else {
-        lines.push(`- ${ex.name} (${ex.sets || 3} × ${ex.reps || 10})`);
-      }
-    });
-    lines.push('');
-  });
-  return lines.join('\n');
-}
-
 function updateTemplateCopyPreview() {
   if (!templateCopyArea) return;
-  if (currentTemplateFormat === 'json') {
-    templateCopyArea.value = generateTemplateJsonPayload();
+  if (currentTemplateFormat === 'heavyset') {
+    templateCopyArea.value = generateHeavySetTextPayload();
   } else {
-    templateCopyArea.value = generateTemplateTextPayload();
+    templateCopyArea.value = generateTemplateJsonPayload();
   }
 }
 
@@ -1962,7 +1965,7 @@ if (tabFmtJson) {
 
 if (tabFmtText) {
   tabFmtText.onclick = () => {
-    currentTemplateFormat = 'text';
+    currentTemplateFormat = 'heavyset';
     tabFmtText.classList.add('active');
     tabFmtJson.classList.remove('active');
     updateTemplateCopyPreview();
