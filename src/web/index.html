@@ -74,10 +74,10 @@
           </div>
 
           <div id="upload-zone" class="upload-zone hidden">
-            <input type="file" id="backup-file-input" accept=".fitnotes,.db,.sqlite,.sqlite3,.backup,.zip,*" class="hidden-input" />
+            <input type="file" id="backup-file-input" accept=".fitnotesdb,.fitnotes,.db,.sqlite,.sqlite3,.backup,.zip,*" class="hidden-input" />
             <div class="drop-target" id="drop-target">
               <span class="upload-icon">📂</span>
-              <p>Drag & Drop your backup file here (<code>.fitnotes</code>, <code>.db</code>, <code>.zip</code>)</p>
+              <p>Drag & Drop your backup file here (<code>.fitnotesdb</code>, <code>.fitnotes</code>, <code>.zip</code>)</p>
               <span class="subtext">or click to browse from device / iCloud Drive</span>
             </div>
             <div id="backup-info" class="backup-info hidden">
@@ -94,12 +94,15 @@
           </div>
           <p class="card-desc">100% private. Processed completely on your device.</p>
           <div class="export-buttons">
-            <button id="btn-export-fitnotes" class="btn btn-success btn-block btn-lg">
-              <span>📥</span> Download <strong>.fitnotes</strong> Backup
+            <button id="btn-export-fitnotes-ios" class="btn btn-success btn-block btn-lg" style="margin-bottom: 8px;">
+              <span>🍎</span> Download for iOS (<strong>.fitnotesdb</strong>)
             </button>
-            <div class="btn-group-half">
+            <button id="btn-export-fitnotes" class="btn btn-primary btn-block btn-lg">
+              <span>🤖</span> Download for Android (<strong>.fitnotes</strong>)
+            </button>
+            <div class="btn-group-half" style="margin-top: 8px;">
               <button id="btn-export-csv" class="btn btn-outline">
-                <span>📄</span> FitNotes CSV
+                <span>📄</span> CSV Export
               </button>
               <button id="btn-export-json" class="btn btn-outline">
                 <span>📦</span> JSON Template

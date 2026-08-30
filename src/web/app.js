@@ -750,8 +750,10 @@ async function handleBackupFile(file) {
   showToast(`Loaded backup: ${uploadedBackupFilename}`);
 }
 
-// Export FitNotes Backup (.fitnotes)
-document.getElementById('btn-export-fitnotes').onclick = async () => {
+document.getElementById('btn-export-fitnotes-ios').onclick = () => exportFitNotesDatabase('fitnotesdb');
+document.getElementById('btn-export-fitnotes').onclick = () => exportFitNotesDatabase('fitnotes');
+
+async function exportFitNotesDatabase(ext = 'fitnotesdb') {
   if (!SQL) {
     showToast('Initializing SQLite Engine... please try again in a second.');
     await initSQLite();
@@ -874,11 +876,13 @@ document.getElementById('btn-export-fitnotes').onclick = async () => {
   // Export binary SQLite database
   const binaryArray = db.export();
   const blob = new Blob([binaryArray], { type: 'application/octet-stream' });
-  const filename = isMerge ? `Updated_${uploadedBackupFilename || 'FitNotes_Backup.fitnotes'}` : `${routineTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.fitnotes`;
+  const filename = isMerge 
+    ? `Updated_${uploadedBackupFilename || ('FitNotes_Backup.' + ext)}` 
+    : `${routineTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.${ext}`;
 
   downloadBlob(blob, filename);
   showToast(`Downloaded ${filename}! Ready for FitNotes.`);
-};
+}
 
 // Export CSV
 document.getElementById('btn-export-csv').onclick = () => {
