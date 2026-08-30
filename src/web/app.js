@@ -799,15 +799,24 @@ async function exportFitNotesDatabase(ext = 'fitnotesdb') {
         alert('Could not parse existing backup file. Generating fresh backup instead.');
         db = new SQL.Database();
       }
+    } else if (ext === 'fitnotesdb') {
+      try {
+        const resp = await fetch('base_ios.fitnotesdb');
+        const buf = await resp.arrayBuffer();
+        db = new SQL.Database(new Uint8Array(buf));
+      } catch (e) {
+        console.warn('Could not load base_ios template, generating standard db:', e);
+        db = new SQL.Database();
+      }
     } else {
       db = new SQL.Database();
     }
 
-    const isCoreData = isMerge && db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='ZTEMPLATEWORKOUT';").length > 0;
+    const isCoreData = (ext === 'fitnotesdb') || (isMerge && db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='ZTEMPLATEWORKOUT';").length > 0);
 
     if (isCoreData) {
       // ==========================================
-      // iOS Core Data (.fitnotesdb) Merge Handler
+      // iOS Core Data (.fitnotesdb) Handler
       // ==========================================
       const getNextPk = (name) => {
         const res = db.exec("SELECT Z_MAX FROM Z_PRIMARYKEY WHERE Z_NAME = ?;", [name]);
