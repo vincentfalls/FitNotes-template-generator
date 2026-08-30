@@ -691,7 +691,37 @@ fileInput.onchange = (e) => {
 async function handleBackupFile(file) {
   uploadedBackupFilename = file.name;
   const arrayBuffer = await file.arrayBuffer();
-  uploadedBackupBuffer = new Uint8Array(arrayBuffer);
+  let uint8Array = new Uint8Array(arrayBuffer);
+
+  // Check if file is a ZIP archive (magic bytes PK = 0x50, 0x4B)
+  if (uint8Array.length > 4 && uint8Array[0] === 0x50 && uint8Array[1] === 0x4B && window.JSZip) {
+    try {
+      const zip = await window.JSZip.loadAsync(uint8Array);
+      // Look for .fitnotes, .db, .sqlite or any SQLite file in the archive
+      let targetFile = null;
+      zip.forEach((relativePath, zipEntry) => {
+        if (!zipEntry.dir && (relativePath.endsWith('.fitnotes') || relativePath.endsWith('.db') || relativePath.endsWith('.sqlite'))) {
+          targetFile = zipEntry;
+        }
+      });
+      if (!targetFile) {
+        // Find first non-directory file
+        zip.forEach((relativePath, zipEntry) => {
+          if (!zipEntry.dir && !targetFile) targetFile = zipEntry;
+        });
+      }
+      if (targetFile) {
+        const extractedBuffer = await targetFile.async('uint8array');
+        uint8Array = extractedBuffer;
+        uploadedBackupFilename = targetFile.name || file.name.replace(/\.zip$/i, '.fitnotes');
+        showToast(`Extracted database: ${targetFile.name}`);
+      }
+    } catch (zipErr) {
+      console.warn('Zip parsing fallback:', zipErr);
+    }
+  }
+
+  uploadedBackupBuffer = uint8Array;
 
   const infoEl = document.getElementById('backup-info');
   const summaryEl = document.getElementById('backup-summary');
@@ -708,16 +738,16 @@ async function handleBackupFile(file) {
         if (resRoutines.length > 0) routineCount = resRoutines[0].values[0][0];
       } catch (err) {}
 
-      summaryEl.innerHTML = `<strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)<br>${logsCount} workout logs • ${routineCount} existing routines`;
+      summaryEl.innerHTML = `<strong>${uploadedBackupFilename}</strong> (${(file.size / 1024).toFixed(1)} KB)<br>${logsCount} workout logs • ${routineCount} existing routines`;
     } catch (e) {
-      summaryEl.textContent = `${file.name} ready for injection.`;
+      summaryEl.textContent = `${uploadedBackupFilename} ready for injection.`;
     }
   } else {
-    summaryEl.textContent = `${file.name} ready for injection.`;
+    summaryEl.textContent = `${uploadedBackupFilename} ready for injection.`;
   }
 
   infoEl.classList.remove('hidden');
-  showToast(`Loaded backup: ${file.name}`);
+  showToast(`Loaded backup: ${uploadedBackupFilename}`);
 }
 
 // Export FitNotes Backup (.fitnotes)

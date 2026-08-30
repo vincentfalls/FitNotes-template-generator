@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <!-- sql.js WebAssembly for 100% client-side SQLite generation -->
   <script src="https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/sql-wasm.js"></script>
+  <!-- jszip for unzipping attachment-enabled FitNotes backup archives -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
   <div class="app-container">
@@ -72,11 +74,11 @@
           </div>
 
           <div id="upload-zone" class="upload-zone hidden">
-            <input type="file" id="backup-file-input" accept=".fitnotes,.db,.sqlite" class="hidden-input" />
+            <input type="file" id="backup-file-input" accept=".fitnotes,.db,.sqlite,.sqlite3,.backup,.zip,*" class="hidden-input" />
             <div class="drop-target" id="drop-target">
               <span class="upload-icon">📂</span>
-              <p>Drag & Drop your <code>.fitnotes</code> file here</p>
-              <span class="subtext">or click to browse from device</span>
+              <p>Drag & Drop your backup file here (<code>.fitnotes</code>, <code>.db</code>, <code>.zip</code>)</p>
+              <span class="subtext">or click to browse from device / iCloud Drive</span>
             </div>
             <div id="backup-info" class="backup-info hidden">
               <div class="backup-info-badge">✓ Backup Loaded</div>
