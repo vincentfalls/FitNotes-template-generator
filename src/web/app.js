@@ -1886,21 +1886,25 @@ const tabFmtText = document.getElementById('tab-fmt-text');
 const btnDoCopyTemplate = document.getElementById('btn-do-copy-template');
 const btnShareTemplateNative = document.getElementById('btn-share-template-native');
 
-let currentTemplateFormat = 'heavyset';
+let currentTemplateFormat = 'text';
 
-function generateHeavySetTextPayload() {
-  const lines = [`Routine: ${currentRoutine.title}`, ''];
+function generateRoutineTextPayload() {
+  const lines = [`# ${currentRoutine.title}`];
+  if (currentRoutine.notes) {
+    lines.push(currentRoutine.notes);
+  }
+  lines.push('');
+
   currentRoutine.sections.forEach(sec => {
-    lines.push(`Workout: ${sec.name}`);
+    lines.push(`## ${sec.name}`);
     sec.exercises.forEach(ex => {
-      lines.push(ex.name);
       if (ex.strategy === 'percent_1rm' && ex.percentSets) {
-        const waveStr = ex.percentSets.map(s => `${s.reps} reps @ ${s.percent}%`).join(', ');
-        lines.push(`${ex.percentSets.length} sets x ${ex.percentSets[0].reps} reps (${waveStr})`);
+        const waveStr = ex.percentSets.map(s => `${s.percent}% × ${s.reps}`).join(', ');
+        lines.push(`- ${ex.name} (${waveStr})`);
       } else {
         const sets = ex.sets || 3;
         const reps = ex.reps || 10;
-        lines.push(`${sets} sets x ${reps} reps`);
+        lines.push(`- ${ex.name} (${sets} × ${reps})`);
       }
     });
     lines.push('');
@@ -1936,8 +1940,8 @@ function generateTemplateJsonPayload() {
 
 function updateTemplateCopyPreview() {
   if (!templateCopyArea) return;
-  if (currentTemplateFormat === 'heavyset') {
-    templateCopyArea.value = generateHeavySetTextPayload();
+  if (currentTemplateFormat === 'text') {
+    templateCopyArea.value = generateRoutineTextPayload();
   } else {
     templateCopyArea.value = generateTemplateJsonPayload();
   }
