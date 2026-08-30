@@ -959,15 +959,15 @@ const EXERCISE_CATALOG = [
   { name: 'Seated Calf Raise', category: 'Legs', pattern: 'calf', equipment: 'machines', jointRisks: [], compound: false },
 
   // ARMS & ACCESSORIES
-  { name: 'Barbell Biceps Curl', category: 'Biceps', pattern: 'bicep_curl', equipment: 'barbell', jointRisks: ['wrist'], compound: false },
+  { name: 'Barbell Biceps Curl', category: 'Biceps', pattern: 'bicep_curl', equipment: 'barbell', jointRisks: ['wrist', 'elbow'], compound: false },
   { name: 'EZ Bar Biceps Curl', category: 'Biceps', pattern: 'bicep_curl', equipment: 'barbell', jointRisks: [], compound: false },
   { name: 'Incline Dumbbell Curl', category: 'Biceps', pattern: 'bicep_curl', equipment: 'dumbbells', jointRisks: [], compound: false },
   { name: 'Hammer Curl (Dumbbell)', category: 'Biceps', pattern: 'bicep_curl', equipment: 'dumbbells', jointRisks: [], compound: false },
   { name: 'Cable Biceps Curl', category: 'Biceps', pattern: 'bicep_curl', equipment: 'cables', jointRisks: [], compound: false },
   { name: 'Skull Crusher (EZ Bar)', category: 'Triceps', pattern: 'tricep_ext', equipment: 'barbell', jointRisks: ['elbow', 'wrist'], compound: false },
   { name: 'Triceps Pushdown (Cable)', category: 'Triceps', pattern: 'tricep_ext', equipment: 'cables', jointRisks: [], compound: false },
-  { name: 'Overhead Dumbbell Triceps Extension', category: 'Triceps', pattern: 'tricep_ext', equipment: 'dumbbells', jointRisks: ['shoulder'], compound: false },
-  { name: 'Close-Grip Barbell Bench Press', category: 'Triceps', pattern: 'tricep_press', equipment: 'barbell', jointRisks: ['wrist'], compound: true },
+  { name: 'Overhead Dumbbell Triceps Extension', category: 'Triceps', pattern: 'tricep_ext', equipment: 'dumbbells', jointRisks: ['shoulder', 'elbow'], compound: false },
+  { name: 'Close-Grip Barbell Bench Press', category: 'Triceps', pattern: 'tricep_press', equipment: 'barbell', jointRisks: ['wrist', 'elbow'], compound: true },
 
   // CORE
   { name: 'Hanging Leg Raise', category: 'Abs', pattern: 'abs', equipment: 'pullup_bar', jointRisks: [], compound: false },

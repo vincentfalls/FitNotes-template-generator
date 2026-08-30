@@ -44,6 +44,19 @@ class TestSmartGenerator(unittest.TestCase):
             for ex in sec.exercises:
                 self.assertNotIn(ex.exercise_name, ["Conventional Deadlift", "Barbell Back Squat", "Flat Barbell Bench Press"])
 
+        # Test 6-day with elbow injury
+        r4 = SmartWorkoutGenerator.generate(
+            goal=WorkoutGoal.HYPERTROPHY,
+            days_per_week=6,
+            experience=ExperienceLevel.INTERMEDIATE,
+            equipment=EquipmentType.FULL_GYM,
+            injuries=["elbow"],
+        )
+        self.assertEqual(len(r4.sections), 6)
+        for sec in r4.sections:
+            for ex in sec.exercises:
+                self.assertNotIn(ex.exercise_name, ["Skull Crusher (EZ Bar)", "Barbell Biceps Curl", "Close-Grip Barbell Bench Press", "Dips (Chest)"])
+
         # Insert into database
         db = FitNotesDatabase.create_empty()
         r_id = db.add_routine(r3)

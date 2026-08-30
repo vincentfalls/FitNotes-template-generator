@@ -128,10 +128,22 @@ class SmartWorkoutGenerator:
                 if ex.exercise_name in avoided:
                     continue
                 # Lower back injury filter
-                if "lower_back" in active_injuries and ex.exercise_name in ("Conventional Deadlift", "Barbell Back Squat", "Barbell Bent-Over Row"):
+                if "lower_back" in active_injuries and ex.exercise_name in ("Conventional Deadlift", "Barbell Back Squat", "Barbell Bent-Over Row", "Standing Dumbbell Shoulder Press", "Ab Wheel Rollout"):
                     continue
                 # Shoulder injury filter
-                if "shoulder" in active_injuries and ex.exercise_name in ("Overhead Press (Barbell)", "Dips (Chest)"):
+                if "shoulder" in active_injuries and ex.exercise_name in ("Overhead Press (Barbell)", "Dips (Chest)", "Seated Dumbbell Shoulder Press", "Standing Dumbbell Shoulder Press", "Pull Up", "Chin Up", "Dumbbell Chest Flye"):
+                    continue
+                # Elbow injury filter
+                if "elbow" in active_injuries and ex.exercise_name in ("Skull Crusher (EZ Bar)", "Barbell Biceps Curl", "Close-Grip Barbell Bench Press", "Dips (Chest)", "Overhead Dumbbell Triceps Extension"):
+                    continue
+                # Knee injury filter
+                if "knee" in active_injuries and ex.exercise_name in ("Barbell Back Squat", "Front Squat", "Bulgarian Split Squat", "Walking Lunge", "Leg Extension (Machine)"):
+                    continue
+                # Wrist injury filter
+                if "wrist" in active_injuries and ex.exercise_name in ("Barbell Biceps Curl", "Close-Grip Barbell Bench Press", "Barbell Bent-Over Row", "Flat Barbell Bench Press", "Incline Barbell Bench Press", "Skull Crusher (EZ Bar)"):
+                    continue
+                # Neck injury filter
+                if "neck" in active_injuries and ex.exercise_name in ("Barbell Back Squat", "Conventional Deadlift", "Overhead Press (Barbell)"):
                     continue
                 filtered_exercises.append(ex)
             
