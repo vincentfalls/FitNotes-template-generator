@@ -761,231 +761,250 @@ async function handleBackupFile(file) {
   showToast(`Loaded backup: ${uploadedBackupFilename}`);
 }
 
-document.getElementById('btn-export-fitnotes-ios').onclick = () => exportFitNotesDatabase('fitnotesdb');
-document.getElementById('btn-export-fitnotes').onclick = () => exportFitNotesDatabase('fitnotes');
+const btnExportIos = document.getElementById('btn-export-fitnotes-ios');
+if (btnExportIos) {
+  btnExportIos.onclick = (e) => {
+    e.preventDefault();
+    exportFitNotesDatabase('fitnotesdb');
+  };
+}
+
+const btnExportAndroid = document.getElementById('btn-export-fitnotes');
+if (btnExportAndroid) {
+  btnExportAndroid.onclick = (e) => {
+    e.preventDefault();
+    exportFitNotesDatabase('fitnotes');
+  };
+}
 
 async function exportFitNotesDatabase(ext = 'fitnotesdb') {
-  if (!SQL) {
-    showToast('Initializing SQLite Engine... please try again in a second.');
-    await initSQLite();
+  try {
     if (!SQL) {
-      alert('SQLite WebAssembly could not load. Please verify internet connection for CDN scripts.');
-      return;
+      showToast('Initializing SQLite Engine... please try again in a second.');
+      await initSQLite();
+      if (!SQL) {
+        alert('SQLite WebAssembly could not load. Please verify internet connection for CDN scripts.');
+        return;
+      }
     }
-  }
 
-  let db;
-  const isMerge = modeMerge.checked && uploadedBackupBuffer;
+    let db;
+    const isMerge = modeMerge.checked && uploadedBackupBuffer;
 
-  if (isMerge) {
-    try {
-      db = new SQL.Database(uploadedBackupBuffer);
-      showToast('Merging routine into existing backup...');
-    } catch (e) {
-      alert('Could not parse existing backup file. Generating fresh backup instead.');
+    if (isMerge) {
+      try {
+        db = new SQL.Database(uploadedBackupBuffer);
+        showToast('Merging routine into existing backup...');
+      } catch (e) {
+        alert('Could not parse existing backup file. Generating fresh backup instead.');
+        db = new SQL.Database();
+      }
+    } else {
       db = new SQL.Database();
     }
-  } else {
-    db = new SQL.Database();
-  }
 
-  const isCoreData = isMerge && db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='ZTEMPLATEWORKOUT';").length > 0;
+    const isCoreData = isMerge && db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='ZTEMPLATEWORKOUT';").length > 0;
 
-  if (isCoreData) {
-    // ==========================================
-    // iOS Core Data (.fitnotesdb) Merge Handler
-    // ==========================================
-    const getNextPk = (name) => {
-      const res = db.exec("SELECT Z_MAX FROM Z_PRIMARYKEY WHERE Z_NAME = ?;", [name]);
-      const current = res.length > 0 && res[0].values.length > 0 ? res[0].values[0][0] : 0;
-      const nxt = current + 1;
-      db.run("UPDATE Z_PRIMARYKEY SET Z_MAX = ? WHERE Z_NAME = ?;", [nxt, name]);
-      return nxt;
-    };
+    if (isCoreData) {
+      // ==========================================
+      // iOS Core Data (.fitnotesdb) Merge Handler
+      // ==========================================
+      const getNextPk = (name) => {
+        const res = db.exec("SELECT Z_MAX FROM Z_PRIMARYKEY WHERE Z_NAME = ?;", [name]);
+        const current = res.length > 0 && res[0].values.length > 0 ? res[0].values[0][0] : 0;
+        const nxt = current + 1;
+        db.run("UPDATE Z_PRIMARYKEY SET Z_MAX = ? WHERE Z_NAME = ?;", [nxt, name]);
+        return nxt;
+      };
 
-    const routineTitle = document.getElementById('routine-name').value || 'Custom Workout Routine';
-    const routineNotes = document.getElementById('routine-notes').value || '';
+      const routineTitle = document.getElementById('routine-name').value || 'Custom Workout Routine';
+      const routineNotes = document.getElementById('routine-notes').value || '';
 
-    currentRoutine.sections.forEach((sec, sIdx) => {
-      const twPk = getNextPk('TemplateWorkout');
-      const tgPk = getNextPk('TemplateGroup');
-      const sectionName = currentRoutine.sections.length > 1 ? `${routineTitle} - ${sec.name}` : routineTitle;
-
-      db.run(
-        "INSERT INTO ZTEMPLATEWORKOUT (Z_PK, Z_ENT, Z_OPT, ZFNAIMPORTID, ZINDEX, ZTOUCHED, ZNAME, ZNOTES, ZTEMPLATENOTES, ZGROUP) VALUES (?, 17, 1, -1, ?, 1, ?, ?, '', ?);",
-        [twPk, sIdx, sectionName, routineNotes, twPk]
-      );
-
-      db.run(
-        "INSERT INTO ZTEMPLATEGROUP (Z_PK, Z_ENT, Z_OPT, ZFNAIMPORTID, ZINDEX, ZISROOT, ZNAME, ZTEMPLATE) VALUES (?, 15, 1, -1, ?, 1, ?, ?);",
-        [tgPk, sIdx, sectionName, twPk]
-      );
-
-      sec.exercises.forEach((rEx, eIdx) => {
-        // Find or create ZEXERCISE
-        let exPk;
-        const exRes = db.exec("SELECT Z_PK FROM ZEXERCISE WHERE LOWER(ZNAME) = LOWER(?);", [rEx.name]);
-        if (exRes.length > 0) {
-          exPk = exRes[0].values[0][0];
-        } else {
-          exPk = getNextPk('Exercise');
-          // Find Category PK
-          const catRes = db.exec("SELECT Z_PK FROM ZEXERCISECATEGORY WHERE LOWER(ZNAME) = LOWER(?);", [rEx.category || 'Chest']);
-          const catPk = catRes.length > 0 ? catRes[0].values[0][0] : 3;
-          db.run(
-            "INSERT INTO ZEXERCISE (Z_PK, Z_ENT, Z_OPT, ZDEFAULTGRAPHQUERYRAW, ZDEFAULTGRAPHTIMEPERIODRAW, ZKINDINT, ZRESTTIME, ZUNITINT, ZWEIGHTINCREMENTKG, ZWEIGHTINCREMENTLBS, ZCATEGORY, ZNAME, ZNOTES) VALUES (?, 2, 1, 1, 1, 1, ?, 0, 250, 500, ?, ?, '');",
-            [exPk, rEx.restTime || 90, catPk, rEx.name]
-          );
-        }
-
-        const twePk = getNextPk('TemplateWorkoutExercise');
-        const strategy = rEx.strategy || 'predefined';
-        const popType = strategy === 'percent_1rm' ? 2 : (strategy === 'predefined' ? 0 : (strategy === 'copy_previous' ? 1 : 3));
-        const restTime = rEx.restTime || 90;
+      currentRoutine.sections.forEach((sec, sIdx) => {
+        const twPk = getNextPk('TemplateWorkout');
+        const tgPk = getNextPk('TemplateGroup');
+        const sectionName = currentRoutine.sections.length > 1 ? `${routineTitle} - ${sec.name}` : routineTitle;
 
         db.run(
-          "INSERT INTO ZTEMPLATEWORKOUTEXERCISE (Z_PK, Z_ENT, Z_OPT, ZINDEX, ZPOPULATESETSTYPERAW, ZRESTTIME, ZTOUCHED, ZUNITINT, ZWEIGHTINCREMENTKG, ZWEIGHTINCREMENTLBS, ZEXERCISE, ZWORKOUT) VALUES (?, 18, 1, ?, ?, ?, 1, 0, 250, 500, ?, ?);",
-          [twePk, eIdx, popType, restTime, exPk, twPk]
+          "INSERT INTO ZTEMPLATEWORKOUT (Z_PK, Z_ENT, Z_OPT, ZFNAIMPORTID, ZINDEX, ZTOUCHED, ZNAME, ZNOTES, ZTEMPLATENOTES, ZGROUP) VALUES (?, 17, 1, -1, ?, 1, ?, ?, '', ?);",
+          [twPk, sIdx, sectionName, routineNotes, twPk]
         );
 
-        if (strategy === 'percent_1rm') {
-          const percentSets = rEx.percentSets || [
-            { percent: 70.0, reps: 5 },
-            { percent: 80.0, reps: 5 },
-            { percent: 90.0, reps: 3 }
-          ];
-          percentSets.forEach((pSet, pIdx) => {
-            const twsPk = getNextPk('TemplateWorkoutSet');
-            const pctVal = Math.round(pSet.percent * 100);
+        db.run(
+          "INSERT INTO ZTEMPLATEGROUP (Z_PK, Z_ENT, Z_OPT, ZFNAIMPORTID, ZINDEX, ZISROOT, ZNAME, ZTEMPLATE) VALUES (?, 15, 1, -1, ?, 1, ?, ?);",
+          [tgPk, sIdx, sectionName, twPk]
+        );
+
+        sec.exercises.forEach((rEx, eIdx) => {
+          // Find or create ZEXERCISE
+          let exPk;
+          const exRes = db.exec("SELECT Z_PK FROM ZEXERCISE WHERE LOWER(ZNAME) = LOWER(?);", [rEx.name]);
+          if (exRes.length > 0) {
+            exPk = exRes[0].values[0][0];
+          } else {
+            exPk = getNextPk('Exercise');
+            // Find Category PK
+            const catRes = db.exec("SELECT Z_PK FROM ZEXERCISECATEGORY WHERE LOWER(ZNAME) = LOWER(?);", [rEx.category || 'Chest']);
+            const catPk = catRes.length > 0 ? catRes[0].values[0][0] : 3;
             db.run(
-              "INSERT INTO ZTEMPLATEWORKOUTSET (Z_PK, Z_ENT, Z_OPT, ZINDEX, ZREPS, ZWEIGHTLBS, ZWEIGHTKG, ZWORKOUT, ZWORKOUTEXERCISE, ZEXERCISE) VALUES (?, 19, 1, ?, ?, ?, ?, ?, ?, ?);",
-              [twsPk, pIdx, pSet.reps, pctVal, pctVal, twPk, twePk, exPk]
-            );
-          });
-        } else if (strategy === 'predefined') {
-          const setCount = rEx.sets || 3;
-          const repCount = rEx.reps || 10;
-          for (let s = 0; s < setCount; s++) {
-            const twsPk = getNextPk('TemplateWorkoutSet');
-            db.run(
-              "INSERT INTO ZTEMPLATEWORKOUTSET (Z_PK, Z_ENT, Z_OPT, ZINDEX, ZREPS, ZWEIGHTLBS, ZWEIGHTKG, ZWORKOUT, ZWORKOUTEXERCISE, ZEXERCISE) VALUES (?, 19, 1, ?, ?, 0, 0, ?, ?, ?);",
-              [twsPk, s, repCount, twPk, twePk, exPk]
+              "INSERT INTO ZEXERCISE (Z_PK, Z_ENT, Z_OPT, ZDEFAULTGRAPHQUERYRAW, ZDEFAULTGRAPHTIMEPERIODRAW, ZKINDINT, ZRESTTIME, ZUNITINT, ZWEIGHTINCREMENTKG, ZWEIGHTINCREMENTLBS, ZCATEGORY, ZNAME, ZNOTES) VALUES (?, 2, 1, 1, 1, 1, ?, 0, 250, 500, ?, ?, '');",
+              [exPk, rEx.restTime || 90, catPk, rEx.name]
             );
           }
-        }
-      });
-    });
 
-  } else {
-    // ==========================================
-    // Standard FitNotes SQLite Schema
-    // ==========================================
+          const twePk = getNextPk('TemplateWorkoutExercise');
+          const strategy = rEx.strategy || 'predefined';
+          const popType = strategy === 'percent_1rm' ? 2 : (strategy === 'predefined' ? 0 : (strategy === 'copy_previous' ? 1 : 3));
+          const restTime = rEx.restTime || 90;
 
-  // Schema creation
-  db.run(`
-    CREATE TABLE IF NOT EXISTS android_metadata (locale TEXT DEFAULT 'en_US');
-    CREATE TABLE IF NOT EXISTS Category (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, colour TEXT DEFAULT '#4CAF50', sort_order INTEGER DEFAULT 0);
-    CREATE TABLE IF NOT EXISTS exercise (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, category_id INTEGER NOT NULL, exercise_type_id INTEGER DEFAULT 1, notes TEXT, weight_increment REAL DEFAULT 2.5, default_graph_id INTEGER DEFAULT 1, default_rest_time INTEGER DEFAULT 90);
-    CREATE TABLE IF NOT EXISTS Routine (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, notes TEXT);
-    CREATE TABLE IF NOT EXISTS RoutineSection (id INTEGER PRIMARY KEY AUTOINCREMENT, routine_id INTEGER NOT NULL, name TEXT NOT NULL, sort_order INTEGER DEFAULT 0);
-    CREATE TABLE IF NOT EXISTS RoutineSectionExercise (id INTEGER PRIMARY KEY AUTOINCREMENT, routine_section_id INTEGER NOT NULL, exercise_id INTEGER NOT NULL, sort_order INTEGER DEFAULT 0);
-    CREATE TABLE IF NOT EXISTS RoutineSectionExerciseSet (id INTEGER PRIMARY KEY AUTOINCREMENT, routine_section_exercise_id INTEGER NOT NULL, metric_weight REAL DEFAULT 0, reps INTEGER DEFAULT 0, sort_order INTEGER DEFAULT 0, distance REAL DEFAULT 0, duration_seconds INTEGER DEFAULT 0, unit INTEGER DEFAULT 0);
-    CREATE TABLE IF NOT EXISTS training_log (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, exercise_id INTEGER NOT NULL, metric_weight REAL DEFAULT 0, reps INTEGER DEFAULT 0, metric_distance REAL DEFAULT 0, duration_seconds INTEGER DEFAULT 0, comment TEXT, set_order INTEGER DEFAULT 0, unit INTEGER DEFAULT 0, is_personal_record INTEGER DEFAULT 0);
-    CREATE TABLE IF NOT EXISTS body_tracker_type (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, sort_order INTEGER DEFAULT 0, metric_units TEXT DEFAULT 'kg', imperial_units TEXT DEFAULT 'lbs', is_default INTEGER DEFAULT 1);
-    CREATE TABLE IF NOT EXISTS body_tracker (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, body_tracker_type_id INTEGER DEFAULT 1, metric_value REAL DEFAULT 0, comment TEXT);
-    CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, value TEXT, key TEXT, unit INTEGER DEFAULT 0, first_day_of_week INTEGER DEFAULT 0, sound INTEGER DEFAULT 1, vibrate INTEGER DEFAULT 1, timer_duration INTEGER DEFAULT 90, theme INTEGER DEFAULT 0);
-  `);
+          db.run(
+            "INSERT INTO ZTEMPLATEWORKOUTEXERCISE (Z_PK, Z_ENT, Z_OPT, ZINDEX, ZPOPULATESETSTYPERAW, ZRESTTIME, ZTOUCHED, ZUNITINT, ZWEIGHTINCREMENTKG, ZWEIGHTINCREMENTLBS, ZEXERCISE, ZWORKOUT) VALUES (?, 18, 1, ?, ?, ?, 1, 0, 250, 500, ?, ?);",
+            [twePk, eIdx, popType, restTime, exPk, twPk]
+          );
 
-  // Populate settings and metadata
-  try {
-    db.run("INSERT OR IGNORE INTO android_metadata (locale) VALUES ('en_US');");
-    db.run("INSERT OR IGNORE INTO settings (id, name, value, key, unit, first_day_of_week, sound, vibrate, timer_duration, theme) VALUES (1, 'default', 'default', 'version', 0, 0, 1, 1, 90, 0);");
-    db.run("INSERT OR IGNORE INTO body_tracker_type (id, name, sort_order, metric_units, imperial_units, is_default) VALUES (1, 'Body Weight', 0, 'kg', 'lbs', 1);");
-    db.run("INSERT OR IGNORE INTO body_tracker_type (id, name, sort_order, metric_units, imperial_units, is_default) VALUES (2, 'Body Fat %', 1, '%', '%', 1);");
-  } catch (e) {}
-
-  // Ensure default categories
-  DEFAULT_CATEGORIES.forEach(cat => {
-    try {
-      db.run("INSERT OR IGNORE INTO Category (name, colour, sort_order) VALUES (?, ?, ?);", [cat.name, cat.colour, cat.sort_order]);
-    } catch (e) {}
-  });
-
-  // Ensure default exercises
-  DEFAULT_EXERCISES.forEach(ex => {
-    try {
-      const catRes = db.exec("SELECT id FROM Category WHERE LOWER(name) = LOWER(?);", [ex.category]);
-      const catId = catRes.length > 0 ? catRes[0].values[0][0] : 1;
-      db.run("INSERT OR IGNORE INTO exercise (name, category_id, exercise_type_id, weight_increment, default_graph_id, default_rest_time) VALUES (?, ?, ?, ?, 1, 90);", [ex.name, catId, ex.type, ex.inc]);
-    } catch (e) {}
-  });
-
-  // Insert Routine
-  const routineTitle = document.getElementById('routine-name').value || 'Custom Workout Routine';
-  const routineNotes = document.getElementById('routine-notes').value || '';
-  db.run("INSERT INTO Routine (name, notes) VALUES (?, ?);", [routineTitle, routineNotes]);
-  const routineIdRes = db.exec("SELECT last_insert_rowid();");
-  const routineId = routineIdRes[0].values[0][0];
-
-  // Insert Sections, Exercises, Sets
-  currentRoutine.sections.forEach((sec, sIdx) => {
-    db.run("INSERT INTO RoutineSection (routine_id, name, sort_order) VALUES (?, ?, ?);", [routineId, sec.name, sIdx]);
-    const secId = db.exec("SELECT last_insert_rowid();")[0].values[0][0];
-
-    sec.exercises.forEach((rEx, eIdx) => {
-      const restTime = rEx.restTime || 90;
-      const weightInc = wizardState.weightUnit === 'lbs' ? 5.0 : 2.5;
-
-      // Find or create exercise
-      let exRes = db.exec("SELECT id FROM exercise WHERE LOWER(name) = LOWER(?);", [rEx.name]);
-      let exId;
-      if (exRes.length > 0) {
-        exId = exRes[0].values[0][0];
-        try {
-          db.run("UPDATE exercise SET default_rest_time = ?, weight_increment = ? WHERE id = ?;", [restTime, weightInc, exId]);
-        } catch (e) {}
-      } else {
-        const catRes = db.exec("SELECT id FROM Category WHERE LOWER(name) = LOWER(?);", [rEx.category || 'Other']);
-        const catId = catRes.length > 0 ? catRes[0].values[0][0] : 1;
-        db.run("INSERT INTO exercise (name, category_id, exercise_type_id, weight_increment, default_rest_time) VALUES (?, ?, 1, ?, ?);", [rEx.name, catId, weightInc, restTime]);
-        exId = db.exec("SELECT last_insert_rowid();")[0].values[0][0];
-      }
-
-      db.run("INSERT INTO RoutineSectionExercise (routine_section_id, exercise_id, sort_order) VALUES (?, ?, ?);", [secId, exId, eIdx]);
-      const secExId = db.exec("SELECT last_insert_rowid();")[0].values[0][0];
-
-      const strategy = rEx.strategy || 'predefined';
-
-      if (strategy === 'percent_1rm') {
-        const percentSets = rEx.percentSets || [
-          { percent: 70.0, reps: 5 },
-          { percent: 80.0, reps: 5 },
-          { percent: 90.0, reps: 3 }
-        ];
-        percentSets.forEach((pSet, s) => {
-          db.run("INSERT INTO RoutineSectionExerciseSet (routine_section_exercise_id, metric_weight, reps, sort_order) VALUES (?, ?, ?, ?);", [secExId, pSet.percent, pSet.reps, s]);
+          if (strategy === 'percent_1rm') {
+            const percentSets = rEx.percentSets || [
+              { percent: 70.0, reps: 5 },
+              { percent: 80.0, reps: 5 },
+              { percent: 90.0, reps: 3 }
+            ];
+            percentSets.forEach((pSet, pIdx) => {
+              const twsPk = getNextPk('TemplateWorkoutSet');
+              const pctVal = Math.round(pSet.percent * 100);
+              db.run(
+                "INSERT INTO ZTEMPLATEWORKOUTSET (Z_PK, Z_ENT, Z_OPT, ZINDEX, ZREPS, ZWEIGHTLBS, ZWEIGHTKG, ZWORKOUT, ZWORKOUTEXERCISE, ZEXERCISE) VALUES (?, 19, 1, ?, ?, ?, ?, ?, ?, ?);",
+                [twsPk, pIdx, pSet.reps, pctVal, pctVal, twPk, twePk, exPk]
+              );
+            });
+          } else if (strategy === 'predefined') {
+            const setCount = rEx.sets || 3;
+            const repCount = rEx.reps || 10;
+            for (let s = 0; s < setCount; s++) {
+              const twsPk = getNextPk('TemplateWorkoutSet');
+              db.run(
+                "INSERT INTO ZTEMPLATEWORKOUTSET (Z_PK, Z_ENT, Z_OPT, ZINDEX, ZREPS, ZWEIGHTLBS, ZWEIGHTKG, ZWORKOUT, ZWORKOUTEXERCISE, ZEXERCISE) VALUES (?, 19, 1, ?, ?, 0, 0, ?, ?, ?);",
+                [twsPk, s, repCount, twPk, twePk, exPk]
+              );
+            }
+          }
         });
-      } else if (strategy === 'predefined') {
-        const setCount = rEx.sets || 3;
-        const repCount = rEx.reps || 10;
-        for (let s = 0; s < setCount; s++) {
-          db.run("INSERT INTO RoutineSectionExerciseSet (routine_section_exercise_id, metric_weight, reps, sort_order) VALUES (?, 0, ?, ?);", [secExId, repCount, s]);
-        }
-      }
-      // If 'copy_previous' or 'blank', no sets are inserted into RoutineSectionExerciseSet
-    });
-  });
+      });
+
+    } else {
+      // ==========================================
+      // Standard FitNotes SQLite Schema
+      // ==========================================
+
+      // Schema creation
+      db.run(`
+        CREATE TABLE IF NOT EXISTS android_metadata (locale TEXT DEFAULT 'en_US');
+        CREATE TABLE IF NOT EXISTS Category (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, colour TEXT DEFAULT '#4CAF50', sort_order INTEGER DEFAULT 0);
+        CREATE TABLE IF NOT EXISTS exercise (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, category_id INTEGER NOT NULL, exercise_type_id INTEGER DEFAULT 1, notes TEXT, weight_increment REAL DEFAULT 2.5, default_graph_id INTEGER DEFAULT 1, default_rest_time INTEGER DEFAULT 90);
+        CREATE TABLE IF NOT EXISTS Routine (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, notes TEXT);
+        CREATE TABLE IF NOT EXISTS RoutineSection (id INTEGER PRIMARY KEY AUTOINCREMENT, routine_id INTEGER NOT NULL, name TEXT NOT NULL, sort_order INTEGER DEFAULT 0);
+        CREATE TABLE IF NOT EXISTS RoutineSectionExercise (id INTEGER PRIMARY KEY AUTOINCREMENT, routine_section_id INTEGER NOT NULL, exercise_id INTEGER NOT NULL, sort_order INTEGER DEFAULT 0);
+        CREATE TABLE IF NOT EXISTS RoutineSectionExerciseSet (id INTEGER PRIMARY KEY AUTOINCREMENT, routine_section_exercise_id INTEGER NOT NULL, metric_weight REAL DEFAULT 0, reps INTEGER DEFAULT 0, sort_order INTEGER DEFAULT 0, distance REAL DEFAULT 0, duration_seconds INTEGER DEFAULT 0, unit INTEGER DEFAULT 0);
+        CREATE TABLE IF NOT EXISTS training_log (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, exercise_id INTEGER NOT NULL, metric_weight REAL DEFAULT 0, reps INTEGER DEFAULT 0, metric_distance REAL DEFAULT 0, duration_seconds INTEGER DEFAULT 0, comment TEXT, set_order INTEGER DEFAULT 0, unit INTEGER DEFAULT 0, is_personal_record INTEGER DEFAULT 0);
+        CREATE TABLE IF NOT EXISTS body_tracker_type (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, sort_order INTEGER DEFAULT 0, metric_units TEXT DEFAULT 'kg', imperial_units TEXT DEFAULT 'lbs', is_default INTEGER DEFAULT 1);
+        CREATE TABLE IF NOT EXISTS body_tracker (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, body_tracker_type_id INTEGER DEFAULT 1, metric_value REAL DEFAULT 0, comment TEXT);
+        CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, value TEXT, key TEXT, unit INTEGER DEFAULT 0, first_day_of_week INTEGER DEFAULT 0, sound INTEGER DEFAULT 1, vibrate INTEGER DEFAULT 1, timer_duration INTEGER DEFAULT 90, theme INTEGER DEFAULT 0);
+      `);
+
+      // Populate settings and metadata
+      try {
+        db.run("INSERT OR IGNORE INTO android_metadata (locale) VALUES ('en_US');");
+        db.run("INSERT OR IGNORE INTO settings (id, name, value, key, unit, first_day_of_week, sound, vibrate, timer_duration, theme) VALUES (1, 'default', 'default', 'version', 0, 0, 1, 1, 90, 0);");
+        db.run("INSERT OR IGNORE INTO body_tracker_type (id, name, sort_order, metric_units, imperial_units, is_default) VALUES (1, 'Body Weight', 0, 'kg', 'lbs', 1);");
+        db.run("INSERT OR IGNORE INTO body_tracker_type (id, name, sort_order, metric_units, imperial_units, is_default) VALUES (2, 'Body Fat %', 1, '%', '%', 1);");
+      } catch (e) {}
+
+      // Ensure default categories
+      DEFAULT_CATEGORIES.forEach(cat => {
+        try {
+          db.run("INSERT OR IGNORE INTO Category (name, colour, sort_order) VALUES (?, ?, ?);", [cat.name, cat.colour, cat.sort_order]);
+        } catch (e) {}
+      });
+
+      // Ensure default exercises
+      DEFAULT_EXERCISES.forEach(ex => {
+        try {
+          const catRes = db.exec("SELECT id FROM Category WHERE LOWER(name) = LOWER(?);", [ex.category]);
+          const catId = catRes.length > 0 ? catRes[0].values[0][0] : 1;
+          db.run("INSERT OR IGNORE INTO exercise (name, category_id, exercise_type_id, weight_increment, default_graph_id, default_rest_time) VALUES (?, ?, ?, ?, 1, 90);", [ex.name, catId, ex.type, ex.inc]);
+        } catch (e) {}
+      });
+
+      // Insert Routine
+      const routineTitle = document.getElementById('routine-name').value || 'Custom Workout Routine';
+      const routineNotes = document.getElementById('routine-notes').value || '';
+      db.run("INSERT INTO Routine (name, notes) VALUES (?, ?);", [routineTitle, routineNotes]);
+      const routineIdRes = db.exec("SELECT last_insert_rowid();");
+      const routineId = routineIdRes[0].values[0][0];
+
+      // Insert Sections, Exercises, Sets
+      currentRoutine.sections.forEach((sec, sIdx) => {
+        db.run("INSERT INTO RoutineSection (routine_id, name, sort_order) VALUES (?, ?, ?);", [routineId, sec.name, sIdx]);
+        const secId = db.exec("SELECT last_insert_rowid();")[0].values[0][0];
+
+        sec.exercises.forEach((rEx, eIdx) => {
+          const restTime = rEx.restTime || 90;
+          const weightInc = wizardState.weightUnit === 'lbs' ? 5.0 : 2.5;
+
+          // Find or create exercise
+          let exRes = db.exec("SELECT id FROM exercise WHERE LOWER(name) = LOWER(?);", [rEx.name]);
+          let exId;
+          if (exRes.length > 0) {
+            exId = exRes[0].values[0][0];
+            try {
+              db.run("UPDATE exercise SET default_rest_time = ?, weight_increment = ? WHERE id = ?;", [restTime, weightInc, exId]);
+            } catch (e) {}
+          } else {
+            const catRes = db.exec("SELECT id FROM Category WHERE LOWER(name) = LOWER(?);", [rEx.category || 'Other']);
+            const catId = catRes.length > 0 ? catRes[0].values[0][0] : 1;
+            db.run("INSERT INTO exercise (name, category_id, exercise_type_id, weight_increment, default_rest_time) VALUES (?, ?, 1, ?, ?);", [rEx.name, catId, weightInc, restTime]);
+            exId = db.exec("SELECT last_insert_rowid();")[0].values[0][0];
+          }
+
+          db.run("INSERT INTO RoutineSectionExercise (routine_section_id, exercise_id, sort_order) VALUES (?, ?, ?);", [secId, exId, eIdx]);
+          const secExId = db.exec("SELECT last_insert_rowid();")[0].values[0][0];
+
+          const strategy = rEx.strategy || 'predefined';
+
+          if (strategy === 'percent_1rm') {
+            const percentSets = rEx.percentSets || [
+              { percent: 70.0, reps: 5 },
+              { percent: 80.0, reps: 5 },
+              { percent: 90.0, reps: 3 }
+            ];
+            percentSets.forEach((pSet, s) => {
+              db.run("INSERT INTO RoutineSectionExerciseSet (routine_section_exercise_id, metric_weight, reps, sort_order) VALUES (?, ?, ?, ?);", [secExId, pSet.percent, pSet.reps, s]);
+            });
+          } else if (strategy === 'predefined') {
+            const setCount = rEx.sets || 3;
+            const repCount = rEx.reps || 10;
+            for (let s = 0; s < setCount; s++) {
+              db.run("INSERT INTO RoutineSectionExerciseSet (routine_section_exercise_id, metric_weight, reps, sort_order) VALUES (?, 0, ?, ?);", [secExId, repCount, s]);
+            }
+          }
+          // If 'copy_previous' or 'blank', no sets are inserted into RoutineSectionExerciseSet
+        });
+      });
+    }
+
+    // Export binary SQLite database
+    const binaryArray = db.export();
+    const blob = new Blob([binaryArray], { type: 'application/octet-stream' });
+    const routineTitle = document.getElementById('routine-name').value || 'Custom Workout Routine';
+    const filename = isMerge 
+      ? `Updated_${uploadedBackupFilename || ('FitNotes_Backup.' + ext)}` 
+      : `${routineTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.${ext}`;
+
+    downloadBlob(blob, filename);
+    showToast(`Downloaded ${filename}! Ready for FitNotes.`);
+  } catch (err) {
+    console.error('Export error:', err);
+    alert('Error exporting database: ' + (err.message || err));
   }
-
-  // Export binary SQLite database
-  const binaryArray = db.export();
-  const blob = new Blob([binaryArray], { type: 'application/octet-stream' });
-  const filename = isMerge 
-    ? `Updated_${uploadedBackupFilename || ('FitNotes_Backup.' + ext)}` 
-    : `${routineTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.${ext}`;
-
-  downloadBlob(blob, filename);
-  showToast(`Downloaded ${filename}! Ready for FitNotes.`);
 }
 
 // Export CSV
@@ -1027,14 +1046,32 @@ document.getElementById('btn-export-json').onclick = () => {
 };
 
 function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.setAttribute('download', filename);
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+
+    // Trigger download
+    a.click();
+
+    // Delay revocation to avoid cancelling download stream on Safari/WebKit
+    setTimeout(() => {
+      try {
+        if (document.body.contains(a)) {
+          document.body.removeChild(a);
+        }
+        URL.revokeObjectURL(url);
+      } catch (e) {}
+    }, 30000);
+  } catch (err) {
+    console.error('Download error:', err);
+    alert('Download failed: ' + (err.message || err));
+  }
 }
 
 // ==========================================================================
