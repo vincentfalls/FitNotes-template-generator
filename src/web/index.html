@@ -90,14 +90,17 @@
         <!-- Export Actions Card -->
         <section class="card export-card">
           <div class="card-header">
-            <h3>💾 Export & Download</h3>
+            <h3>💾 Export & Install Options</h3>
           </div>
-          <p class="card-desc">100% private. Processed completely on your device.</p>
+          <p class="card-desc">Choose how you'd like to import your templates into FitNotes:</p>
           <div class="export-buttons">
-            <button id="btn-export-fitnotes-ios" class="btn btn-success btn-block btn-lg" style="margin-bottom: 8px;">
-              <span>🍎</span> Download for iOS (<strong>.fitnotesdb</strong>)
+            <button id="btn-copy-template-ios" class="btn btn-primary btn-block btn-lg" style="margin-bottom: 10px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border: none; font-weight: 700;">
+              <span>📋</span> Copy Template for iOS (No Backup Needed!)
             </button>
-            <button id="btn-export-fitnotes" class="btn btn-primary btn-block btn-lg">
+            <button id="btn-export-fitnotes-ios" class="btn btn-success btn-block btn-lg" style="margin-bottom: 8px;">
+              <span>🍎</span> Download Full Database (<strong>.fitnotesdb</strong>)
+            </button>
+            <button id="btn-export-fitnotes" class="btn btn-secondary btn-block btn-lg">
               <span>🤖</span> Download for Android (<strong>.fitnotes</strong>)
             </button>
             <div class="btn-group-half" style="margin-top: 8px;">
@@ -489,6 +492,48 @@
             </button>
             <button id="btn-generate-smart" class="btn btn-success btn-lg glow-btn hidden">
               <span>✨</span> Generate Workout Template
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Direct Template Copy Modal for iOS / Android -->
+    <div id="modal-template-copy" class="modal-backdrop hidden">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+          <div>
+            <h2>📋 Direct Template Import (No Backup Required)</h2>
+            <span class="wizard-subtitle">Instantly install your routine into FitNotes 2 without touching backups or altering logs</span>
+          </div>
+          <button class="modal-close" id="btn-close-template-copy">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="info-alert" style="background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3);">
+            <span>💡</span>
+            <p><strong>3-Step Quick Install:</strong><br>
+            1. Tap <strong>"Copy to Clipboard"</strong> below.<br>
+            2. Open <strong>FitNotes 2</strong> → Go to <strong>Templates</strong> → Tap the <strong>••• (Menu)</strong> in top right.<br>
+            3. Tap <strong>"Import Template"</strong> → <strong>Paste</strong> → Tap <strong>Import</strong>!</p>
+          </div>
+
+          <div class="form-group" style="margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label class="form-label" style="margin: 0;">Template Payload</label>
+              <div style="display: flex; gap: 6px;">
+                <button type="button" id="tab-fmt-json" class="btn btn-outline btn-sm active" style="padding: 4px 10px; font-size: 0.8rem;">JSON Format</button>
+                <button type="button" id="tab-fmt-text" class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 0.8rem;">Routine Text</button>
+              </div>
+            </div>
+            <textarea id="template-copy-area" class="code-preview" style="width: 100%; height: 220px; font-family: monospace; font-size: 0.85rem; padding: 12px; border-radius: 8px; background: #0f172a; color: #38bdf8; border: 1px solid #334155; resize: vertical;" readonly></textarea>
+          </div>
+
+          <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <button id="btn-do-copy-template" class="btn btn-primary btn-block btn-lg" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); border: none; font-weight: 700;">
+              <span>📋</span> Copy to Clipboard
+            </button>
+            <button id="btn-share-template-native" class="btn btn-outline btn-lg" style="display: none;">
+              <span>📤</span> Share
             </button>
           </div>
         </div>

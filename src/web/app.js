@@ -1876,6 +1876,131 @@ tabAndroid.onclick = () => {
   contentIos.classList.add('hidden');
 };
 
+// Direct Template Copy Modal Logic
+const modalTemplateCopy = document.getElementById('modal-template-copy');
+const btnCopyTemplateIos = document.getElementById('btn-copy-template-ios');
+const btnCloseTemplateCopy = document.getElementById('btn-close-template-copy');
+const templateCopyArea = document.getElementById('template-copy-area');
+const tabFmtJson = document.getElementById('tab-fmt-json');
+const tabFmtText = document.getElementById('tab-fmt-text');
+const btnDoCopyTemplate = document.getElementById('btn-do-copy-template');
+const btnShareTemplateNative = document.getElementById('btn-share-template-native');
+
+let currentTemplateFormat = 'json';
+
+function generateTemplateJsonPayload() {
+  const payload = {
+    name: currentRoutine.title,
+    notes: currentRoutine.notes,
+    days: currentRoutine.sections.map(sec => ({
+      name: sec.name,
+      exercises: sec.exercises.map(ex => {
+        const item = {
+          name: ex.name,
+          category: ex.category,
+          strategy: ex.strategy || 'predefined',
+          rest_time: ex.restTime || 90
+        };
+        if (ex.strategy === 'percent_1rm' && ex.percentSets) {
+          item.percent_sets = ex.percentSets;
+        } else {
+          item.sets = ex.sets || 3;
+          item.reps = ex.reps || 10;
+        }
+        return item;
+      })
+    }))
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+function generateTemplateTextPayload() {
+  const lines = [`# ${currentRoutine.title}`, currentRoutine.notes ? `${currentRoutine.notes}\n` : ''];
+  currentRoutine.sections.forEach(sec => {
+    lines.push(`## ${sec.name}`);
+    sec.exercises.forEach(ex => {
+      if (ex.strategy === 'percent_1rm' && ex.percentSets) {
+        const waveStr = ex.percentSets.map(s => `${s.percent}% × ${s.reps}`).join(', ');
+        lines.push(`- ${ex.name} (${waveStr})`);
+      } else {
+        lines.push(`- ${ex.name} (${ex.sets || 3} × ${ex.reps || 10})`);
+      }
+    });
+    lines.push('');
+  });
+  return lines.join('\n');
+}
+
+function updateTemplateCopyPreview() {
+  if (!templateCopyArea) return;
+  if (currentTemplateFormat === 'json') {
+    templateCopyArea.value = generateTemplateJsonPayload();
+  } else {
+    templateCopyArea.value = generateTemplateTextPayload();
+  }
+}
+
+if (btnCopyTemplateIos) {
+  btnCopyTemplateIos.onclick = () => {
+    updateTemplateCopyPreview();
+    modalTemplateCopy.classList.remove('hidden');
+  };
+}
+
+if (btnCloseTemplateCopy) {
+  btnCloseTemplateCopy.onclick = () => modalTemplateCopy.classList.add('hidden');
+}
+
+if (tabFmtJson) {
+  tabFmtJson.onclick = () => {
+    currentTemplateFormat = 'json';
+    tabFmtJson.classList.add('active');
+    tabFmtText.classList.remove('active');
+    updateTemplateCopyPreview();
+  };
+}
+
+if (tabFmtText) {
+  tabFmtText.onclick = () => {
+    currentTemplateFormat = 'text';
+    tabFmtText.classList.add('active');
+    tabFmtJson.classList.remove('active');
+    updateTemplateCopyPreview();
+  };
+}
+
+if (btnDoCopyTemplate) {
+  btnDoCopyTemplate.onclick = async () => {
+    updateTemplateCopyPreview();
+    const textToCopy = templateCopyArea.value;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        templateCopyArea.select();
+        document.execCommand('copy');
+      }
+      showToast('📋 Template copied! Open FitNotes 2 > Templates > ••• > Import Template');
+    } catch (err) {
+      templateCopyArea.select();
+      showToast('Selected text — press Cmd+C / Copy');
+    }
+  };
+}
+
+if (btnShareTemplateNative && navigator.share) {
+  btnShareTemplateNative.style.display = 'inline-flex';
+  btnShareTemplateNative.onclick = async () => {
+    updateTemplateCopyPreview();
+    try {
+      await navigator.share({
+        title: currentRoutine.title,
+        text: templateCopyArea.value
+      });
+    } catch (e) {}
+  };
+}
+
 // Initialize Application
 initSQLite();
 renderPresets();
