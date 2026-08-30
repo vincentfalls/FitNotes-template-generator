@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fitnotes-template-generator"
+version = "1.0.0"
+description = "Workout template generator and backup injector for FitNotes (Android) and FitNotes 2 (iOS)"
+readme = "README.md"
+authors = [{ name = "FitNotes Community" }]
+license = { text = "MIT" }
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0"
+]
+
+[project.scripts]
+fitnotes-template = "src.cli.main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

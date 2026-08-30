@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitNotes & FitNotes 2 Template Generator</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <!-- sql.js WebAssembly for 100% client-side SQLite generation -->
+  <script src="https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/sql-wasm.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="logo-area">
+          <div class="logo-badge">🏋️</div>
+          <div>
+            <h1 class="logo-title">FitNotes Template Generator</h1>
+            <p class="logo-subtitle">For <strong>FitNotes</strong> (Android) & <strong>FitNotes 2</strong> (iOS)</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="btn-smart-wizard" class="btn btn-primary glow-btn">
+            <span>✨</span> Smart AI Wizard
+          </button>
+          <button id="btn-restore-guide" class="btn btn-secondary">
+            <span>📖</span> Restore Guide
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="main-layout">
+      <!-- Left Sidebar: Presets & Backup Management -->
+      <aside class="sidebar-panel">
+        <!-- Preset Library Card -->
+        <section class="card">
+          <div class="card-header">
+            <h3>⚡ Routine Presets</h3>
+            <span class="badge">Popular</span>
+          </div>
+          <div class="preset-list" id="preset-list">
+            <!-- Rendered by JS -->
+          </div>
+        </section>
+
+        <!-- Backup Mode Card -->
+        <section class="card">
+          <div class="card-header">
+            <h3>🛡️ Backup Mode</h3>
+          </div>
+          <div class="mode-selector">
+            <label class="radio-option">
+              <input type="radio" name="export-mode" value="fresh" checked id="mode-fresh">
+              <div class="radio-label">
+                <strong>New Template Backup</strong>
+                <span>Generate a clean .fitnotes database</span>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="export-mode" value="merge" id="mode-merge">
+              <div class="radio-label">
+                <strong>Merge into Existing Backup</strong>
+                <span>Inject into your current workout history</span>
+              </div>
+            </label>
+          </div>
+
+          <div id="upload-zone" class="upload-zone hidden">
+            <input type="file" id="backup-file-input" accept=".fitnotes,.db,.sqlite" class="hidden-input" />
+            <div class="drop-target" id="drop-target">
+              <span class="upload-icon">📂</span>
+              <p>Drag & Drop your <code>.fitnotes</code> file here</p>
+              <span class="subtext">or click to browse from device</span>
+            </div>
+            <div id="backup-info" class="backup-info hidden">
+              <div class="backup-info-badge">✓ Backup Loaded</div>
+              <p id="backup-summary" class="backup-summary"></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Export Actions Card -->
+        <section class="card export-card">
+          <div class="card-header">
+            <h3>💾 Export & Download</h3>
+          </div>
+          <p class="card-desc">100% private. Processed completely on your device.</p>
+          <div class="export-buttons">
+            <button id="btn-export-fitnotes" class="btn btn-success btn-block btn-lg">
+              <span>📥</span> Download <strong>.fitnotes</strong> Backup
+            </button>
+            <div class="btn-group-half">
+              <button id="btn-export-csv" class="btn btn-outline">
+                <span>📄</span> FitNotes CSV
+              </button>
+              <button id="btn-export-json" class="btn btn-outline">
+                <span>📦</span> JSON Template
+              </button>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <!-- Right Main Panel: Visual Routine Builder -->
+      <section class="builder-panel">
+        <div class="card builder-card">
+          <div class="builder-header">
+            <div class="routine-meta">
+              <input type="text" id="routine-name" class="routine-name-input" value="Push Pull Legs (PPL) 6-Day" placeholder="Workout Routine Name..." />
+              <input type="text" id="routine-notes" class="routine-notes-input" value="Classic 6-day hypertrophy split." placeholder="Routine notes / schedule details..." />
+            </div>
+            <div class="builder-top-actions">
+              <button id="btn-add-section" class="btn btn-primary">
+                <span>+</span> Add Workout Day
+              </button>
+            </div>
+          </div>
+
+          <!-- Routine Sections (Days) Container -->
+          <div id="sections-container" class="sections-container">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Smart Wizard Modal -->
+    <div id="modal-wizard" class="modal-backdrop hidden">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h2>✨ Smart Routine Generator</h2>
+          <button class="modal-close" id="btn-close-wizard">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Primary Goal</label>
+            <div class="select-grid">
+              <button type="button" class="choice-btn active" data-group="goal" data-value="hypertrophy">
+                <strong>Hypertrophy</strong>
+                <span>Muscle Growth & Aesthetics</span>
+              </button>
+              <button type="button" class="choice-btn" data-group="goal" data-value="strength">
+                <strong>Strength</strong>
+                <span>Barbell & Compound Power</span>
+              </button>
+              <button type="button" class="choice-btn" data-group="goal" data-value="general_fitness">
+                <strong>General Fitness</strong>
+                <span>Conditioning & Health</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Days Per Week</label>
+            <div class="days-selector">
+              <button type="button" class="day-btn" data-days="2">2 Days</button>
+              <button type="button" class="day-btn" data-days="3">3 Days</button>
+              <button type="button" class="day-btn active" data-days="4">4 Days</button>
+              <button type="button" class="day-btn" data-days="5">5 Days</button>
+              <button type="button" class="day-btn" data-days="6">6 Days</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Equipment Access</label>
+            <div class="select-grid">
+              <button type="button" class="choice-btn active" data-group="equipment" data-value="full_gym">
+                <strong>Full Gym</strong>
+                <span>Barbells, Cables, Machines</span>
+              </button>
+              <button type="button" class="choice-btn" data-group="equipment" data-value="barbell_rack">
+                <strong>Home Barbell Rack</strong>
+                <span>Barbell, Plates, Bench</span>
+              </button>
+              <button type="button" class="choice-btn" data-group="equipment" data-value="dumbbells_only">
+                <strong>Dumbbells Only</strong>
+                <span>Adjustable / DB Bench</span>
+              </button>
+              <button type="button" class="choice-btn" data-group="equipment" data-value="bodyweight_only">
+                <strong>Calisthenics</strong>
+                <span>Pull-up Bar & Bodyweight</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Experience Level</label>
+            <div class="select-grid select-grid-3">
+              <button type="button" class="choice-btn" data-group="experience" data-value="beginner">Beginner</button>
+              <button type="button" class="choice-btn active" data-group="experience" data-value="intermediate">Intermediate</button>
+              <button type="button" class="choice-btn" data-group="experience" data-value="advanced">Advanced</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-generate-smart" class="btn btn-primary btn-block btn-lg">
+            <span>✨</span> Generate Workout Template
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Restore Guide Modal -->
+    <div id="modal-guide" class="modal-backdrop hidden">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+          <h2>📖 How to Restore on iOS & Android</h2>
+          <button class="modal-close" id="btn-close-guide">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="tab-header">
+            <button class="tab-btn active" id="tab-btn-ios">🍏 iOS (FitNotes 2)</button>
+            <button class="tab-btn" id="tab-btn-android">🤖 Android (FitNotes)</button>
+          </div>
+          <div class="tab-content" id="tab-content-ios">
+            <div class="guide-step">
+              <div class="step-num">1</div>
+              <div>
+                <h4>Download the generated <code>.fitnotes</code> file</h4>
+                <p>Click "Download .fitnotes Backup" and save it to your iPhone (e.g. iCloud Drive or Downloads).</p>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="step-num">2</div>
+              <div>
+                <h4>Open the Files App on iPhone</h4>
+                <p>Locate the downloaded <code>.fitnotes</code> file, tap and hold it, then tap <strong>Share</strong>.</p>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="step-num">3</div>
+              <div>
+                <h4>Select FitNotes 2</h4>
+                <p>Choose <strong>FitNotes 2</strong> from the share sheet and tap <strong>Restore Database</strong>.</p>
+              </div>
+            </div>
+          </div>
+          <div class="tab-content hidden" id="tab-content-android">
+            <div class="guide-step">
+              <div class="step-num">1</div>
+              <div>
+                <h4>Download the generated <code>.fitnotes</code> file</h4>
+                <p>Save the <code>.fitnotes</code> file onto your Android device or Google Drive.</p>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="step-num">2</div>
+              <div>
+                <h4>Open FitNotes > Settings > Backup/Restore</h4>
+                <p>In Android FitNotes, open the menu drawer, tap <strong>Settings</strong>, and navigate to <strong>Backup/Restore</strong>.</p>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="step-num">3</div>
+              <div>
+                <h4>Tap Restore Backup</h4>
+                <p>Select your downloaded <code>.fitnotes</code> file to restore your new routines instantly.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
