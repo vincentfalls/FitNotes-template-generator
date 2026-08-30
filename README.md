@@ -3,6 +3,7 @@
 > Modern workout template generator, custom routine builder, and non-destructive backup merger for **FitNotes (Android)** and **FitNotes 2 (iOS)**.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvincentfalls%2Ffitnotes-template-generator)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![Status: Production Ready](https://img.shields.io/badge/status-production_ready-success.svg)]()
 
@@ -21,13 +22,35 @@
   - **Full Body 3-Day**
 - 🧠 **Smart Workout Generator**: Intelligent routine generator customized by goal (Hypertrophy, Strength, General Fitness), days per week (2–6), experience level, and equipment.
 - 📄 **Multi-Format Export**: Download directly as `.fitnotes` (SQLite database backup), `.csv` (FitNotes import format), or `.json` template.
+- ☁️ **Instant Vercel Deployment**: Pre-configured `vercel.json` for 1-click zero-config deployment.
 - 💻 **Python CLI & Developer API**: Full CLI for batch generation, inspection, and pipeline automation.
 
 ---
 
-## 🚀 Quick Start (Web App)
+## 🚀 Deployment to Vercel
 
-1. Launch the local web server:
+### Option 1: 1-Click Deploy via GitHub
+1. Push this repository to your GitHub account:
+   ```bash
+   git remote add origin https://github.com/YOUR_USERNAME/fitnotes-template-generator.git
+   git branch -M main
+   git push -u origin main
+   ```
+2. Go to [https://vercel.com/new](https://vercel.com/new) and select the repository.
+3. Vercel will automatically detect `vercel.json` and deploy your app instantly!
+
+### Option 2: Deploy with Vercel CLI
+```bash
+vercel
+```
+
+For full deployment documentation, see **[Vercel Deployment Guide](docs/VERCEL_DEPLOYMENT.md)**.
+
+---
+
+## 💻 Local Quick Start
+
+1. Launch the local development server:
    ```bash
    python3 -m http.server 8080 --directory src/web
    ```
@@ -63,6 +86,7 @@ python3 -m src.cli.main export-csv --preset upper_lower_4day --output upper_lowe
 
 ## 📖 Documentation & Guides
 
+- ☁️ **[Vercel Deployment Guide](docs/VERCEL_DEPLOYMENT.md)**: 1-click cloud deployment guide.
 - 📲 **[How to Restore on iOS & Android](docs/RESTORE_GUIDE.md)**: Step-by-step restore instructions with screenshots and tips.
 - 📐 **[Database Schema Reference](docs/SCHEMA.md)**: Full SQLite schema breakdown for Android & iOS FitNotes.
 - 🏗️ **[System Architecture](docs/ARCHITECTURE.md)**: Modular design and future mobile roadmap.

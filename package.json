@@ -2,12 +2,23 @@
   "name": "fitnotes-template-generator",
   "version": "1.0.0",
   "description": "Workout template generator for FitNotes (Android) and FitNotes 2 (iOS)",
-  "main": "src/web/app.js",
   "scripts": {
+    "dev": "python3 -m http.server 3000 --directory src/web",
     "start": "python3 -m http.server 8080 --directory src/web",
-    "test": "pytest"
+    "build": "echo 'Building static web assets... done'",
+    "test": "python3 -m unittest discover -s tests -v"
   },
-  "keywords": ["fitnotes", "fitnotes2", "workout", "template", "generator", "fitness", "ios", "android"],
-  "author": "",
+  "keywords": [
+    "fitnotes",
+    "fitnotes2",
+    "workout",
+    "template",
+    "generator",
+    "fitness",
+    "ios",
+    "android",
+    "vercel"
+  ],
+  "author": "Vincent Falls",
   "license": "MIT"
 }
