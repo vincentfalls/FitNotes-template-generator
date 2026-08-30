@@ -731,14 +731,25 @@ async function handleBackupFile(file) {
       const db = new SQL.Database(uploadedBackupBuffer);
       let logsCount = 0;
       let routineCount = 0;
-      try {
-        const resLogs = db.exec("SELECT COUNT(*) FROM training_log;");
-        if (resLogs.length > 0) logsCount = resLogs[0].values[0][0];
-        const resRoutines = db.exec("SELECT COUNT(*) FROM Routine;");
-        if (resRoutines.length > 0) routineCount = resRoutines[0].values[0][0];
-      } catch (err) {}
+      const isCoreData = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='ZTEMPLATEWORKOUT';").length > 0;
 
-      summaryEl.innerHTML = `<strong>${uploadedBackupFilename}</strong> (${(file.size / 1024).toFixed(1)} KB)<br>${logsCount} workout logs • ${routineCount} existing routines`;
+      if (isCoreData) {
+        try {
+          const resLogs = db.exec("SELECT COUNT(*) FROM ZWORKOUTSET;");
+          if (resLogs.length > 0) logsCount = resLogs[0].values[0][0];
+          const resRoutines = db.exec("SELECT COUNT(*) FROM ZTEMPLATEWORKOUT;");
+          if (resRoutines.length > 0) routineCount = resRoutines[0].values[0][0];
+        } catch (err) {}
+        summaryEl.innerHTML = `<strong>${uploadedBackupFilename}</strong> (iOS Core Data Backup • ${(file.size / 1024).toFixed(1)} KB)<br>${logsCount} workout logs • ${routineCount} existing templates`;
+      } else {
+        try {
+          const resLogs = db.exec("SELECT COUNT(*) FROM training_log;");
+          if (resLogs.length > 0) logsCount = resLogs[0].values[0][0];
+          const resRoutines = db.exec("SELECT COUNT(*) FROM Routine;");
+          if (resRoutines.length > 0) routineCount = resRoutines[0].values[0][0];
+        } catch (err) {}
+        summaryEl.innerHTML = `<strong>${uploadedBackupFilename}</strong> (Android DB Backup • ${(file.size / 1024).toFixed(1)} KB)<br>${logsCount} workout logs • ${routineCount} existing routines`;
+      }
     } catch (e) {
       summaryEl.textContent = `${uploadedBackupFilename} ready for injection.`;
     }
@@ -777,6 +788,98 @@ async function exportFitNotesDatabase(ext = 'fitnotesdb') {
   } else {
     db = new SQL.Database();
   }
+
+  const isCoreData = isMerge && db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='ZTEMPLATEWORKOUT';").length > 0;
+
+  if (isCoreData) {
+    // ==========================================
+    // iOS Core Data (.fitnotesdb) Merge Handler
+    // ==========================================
+    const getNextPk = (name) => {
+      const res = db.exec("SELECT Z_MAX FROM Z_PRIMARYKEY WHERE Z_NAME = ?;", [name]);
+      const current = res.length > 0 && res[0].values.length > 0 ? res[0].values[0][0] : 0;
+      const nxt = current + 1;
+      db.run("UPDATE Z_PRIMARYKEY SET Z_MAX = ? WHERE Z_NAME = ?;", [nxt, name]);
+      return nxt;
+    };
+
+    const routineTitle = document.getElementById('routine-name').value || 'Custom Workout Routine';
+    const routineNotes = document.getElementById('routine-notes').value || '';
+
+    currentRoutine.sections.forEach((sec, sIdx) => {
+      const twPk = getNextPk('TemplateWorkout');
+      const tgPk = getNextPk('TemplateGroup');
+      const sectionName = currentRoutine.sections.length > 1 ? `${routineTitle} - ${sec.name}` : routineTitle;
+
+      db.run(
+        "INSERT INTO ZTEMPLATEWORKOUT (Z_PK, Z_ENT, Z_OPT, ZFNAIMPORTID, ZINDEX, ZTOUCHED, ZNAME, ZNOTES, ZTEMPLATENOTES, ZGROUP) VALUES (?, 17, 1, -1, ?, 1, ?, ?, '', ?);",
+        [twPk, sIdx, sectionName, routineNotes, twPk]
+      );
+
+      db.run(
+        "INSERT INTO ZTEMPLATEGROUP (Z_PK, Z_ENT, Z_OPT, ZFNAIMPORTID, ZINDEX, ZISROOT, ZNAME, ZTEMPLATE) VALUES (?, 15, 1, -1, ?, 1, ?, ?);",
+        [tgPk, sIdx, sectionName, twPk]
+      );
+
+      sec.exercises.forEach((rEx, eIdx) => {
+        // Find or create ZEXERCISE
+        let exPk;
+        const exRes = db.exec("SELECT Z_PK FROM ZEXERCISE WHERE LOWER(ZNAME) = LOWER(?);", [rEx.name]);
+        if (exRes.length > 0) {
+          exPk = exRes[0].values[0][0];
+        } else {
+          exPk = getNextPk('Exercise');
+          // Find Category PK
+          const catRes = db.exec("SELECT Z_PK FROM ZEXERCISECATEGORY WHERE LOWER(ZNAME) = LOWER(?);", [rEx.category || 'Chest']);
+          const catPk = catRes.length > 0 ? catRes[0].values[0][0] : 3;
+          db.run(
+            "INSERT INTO ZEXERCISE (Z_PK, Z_ENT, Z_OPT, ZDEFAULTGRAPHQUERYRAW, ZDEFAULTGRAPHTIMEPERIODRAW, ZKINDINT, ZRESTTIME, ZUNITINT, ZWEIGHTINCREMENTKG, ZWEIGHTINCREMENTLBS, ZCATEGORY, ZNAME, ZNOTES) VALUES (?, 2, 1, 1, 1, 1, ?, 0, 250, 500, ?, ?, '');",
+            [exPk, rEx.restTime || 90, catPk, rEx.name]
+          );
+        }
+
+        const twePk = getNextPk('TemplateWorkoutExercise');
+        const strategy = rEx.strategy || 'predefined';
+        const popType = strategy === 'percent_1rm' ? 2 : (strategy === 'predefined' ? 0 : (strategy === 'copy_previous' ? 1 : 3));
+        const restTime = rEx.restTime || 90;
+
+        db.run(
+          "INSERT INTO ZTEMPLATEWORKOUTEXERCISE (Z_PK, Z_ENT, Z_OPT, ZINDEX, ZPOPULATESETSTYPERAW, ZRESTTIME, ZTOUCHED, ZUNITINT, ZWEIGHTINCREMENTKG, ZWEIGHTINCREMENTLBS, ZEXERCISE, ZWORKOUT) VALUES (?, 18, 1, ?, ?, ?, 1, 0, 250, 500, ?, ?);",
+          [twePk, eIdx, popType, restTime, exPk, twPk]
+        );
+
+        if (strategy === 'percent_1rm') {
+          const percentSets = rEx.percentSets || [
+            { percent: 70.0, reps: 5 },
+            { percent: 80.0, reps: 5 },
+            { percent: 90.0, reps: 3 }
+          ];
+          percentSets.forEach((pSet, pIdx) => {
+            const twsPk = getNextPk('TemplateWorkoutSet');
+            const pctVal = Math.round(pSet.percent * 100);
+            db.run(
+              "INSERT INTO ZTEMPLATEWORKOUTSET (Z_PK, Z_ENT, Z_OPT, ZINDEX, ZREPS, ZWEIGHTLBS, ZWEIGHTKG, ZWORKOUT, ZWORKOUTEXERCISE, ZEXERCISE) VALUES (?, 19, 1, ?, ?, ?, ?, ?, ?, ?);",
+              [twsPk, pIdx, pSet.reps, pctVal, pctVal, twPk, twePk, exPk]
+            );
+          });
+        } else if (strategy === 'predefined') {
+          const setCount = rEx.sets || 3;
+          const repCount = rEx.reps || 10;
+          for (let s = 0; s < setCount; s++) {
+            const twsPk = getNextPk('TemplateWorkoutSet');
+            db.run(
+              "INSERT INTO ZTEMPLATEWORKOUTSET (Z_PK, Z_ENT, Z_OPT, ZINDEX, ZREPS, ZWEIGHTLBS, ZWEIGHTKG, ZWORKOUT, ZWORKOUTEXERCISE, ZEXERCISE) VALUES (?, 19, 1, ?, ?, 0, 0, ?, ?, ?);",
+              [twsPk, s, repCount, twPk, twePk, exPk]
+            );
+          }
+        }
+      });
+    });
+
+  } else {
+    // ==========================================
+    // Standard FitNotes SQLite Schema
+    // ==========================================
 
   // Schema creation
   db.run(`
@@ -872,6 +975,7 @@ async function exportFitNotesDatabase(ext = 'fitnotesdb') {
       // If 'copy_previous' or 'blank', no sets are inserted into RoutineSectionExerciseSet
     });
   });
+  }
 
   // Export binary SQLite database
   const binaryArray = db.export();
